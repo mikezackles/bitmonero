@@ -30,9 +30,6 @@
 #define DEFAULT_FEE                                     ((uint64_t)1000000) // pow(10, 6)
 
 
-#define ORPHANED_BLOCKS_MAX_COUNT                       100
-
-
 #define DIFFICULTY_TARGET                               120 // seconds
 #define DIFFICULTY_WINDOW                               720 // blocks
 #define DIFFICULTY_LAG                                  15  // !!!
