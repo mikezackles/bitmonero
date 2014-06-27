@@ -201,8 +201,8 @@ void cn_slow_hash(const void *data, size_t length, char *hash)
 
     for(i = 0; i < ITER / 2; i++)
     {
-				#define TOTALBLOCKS (MEMORY / AES_BLOCK_SIZE)
-				#define state_index(x) (((*((uint64_t *)x) >> 4) & (TOTALBLOCKS - 1)) << 4)
+        #define TOTALBLOCKS (MEMORY / AES_BLOCK_SIZE)
+        #define state_index(x) (((*((uint64_t *)x) >> 4) & (TOTALBLOCKS - 1)) << 4)
 
         // Iteration 1
         p = &long_state[state_index(a)];
