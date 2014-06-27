@@ -340,7 +340,7 @@ namespace cryptonote
       crypto::hash h;
       get_block_longhash(b, h, height);
 
-      if(check_hash(h, local_diff))
+      if(!m_stop && check_hash(h, local_diff))
       {
         //we lucky!
         ++m_config.current_extra_message_index;
