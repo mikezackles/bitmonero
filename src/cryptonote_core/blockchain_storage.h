@@ -128,6 +128,45 @@ namespace cryptonote {
     void print_blockchain_outs(const std::string& file);
 
   private:
+    struct Transaction {
+      transaction tx;
+      std::vector<uint32_t> m_global_output_indexes;
+
+      template<class archive_t> void serialize(archive_t & ar, unsigned int version);
+
+      BEGIN_SERIALIZE_OBJECT()
+        FIELD(tx)
+        FIELD(m_global_output_indexes)
+      END_SERIALIZE()
+    };
+
+    struct Block {
+      block bl;
+      uint32_t height;
+      uint64_t block_cumulative_size;
+      difficulty_type cumulative_difficulty;
+      uint64_t already_generated_coins;
+      std::vector<Transaction> transactions;
+
+      template<class Archive> void serialize(Archive& archive, unsigned int version);
+
+      BEGIN_SERIALIZE_OBJECT()
+        FIELD(bl)
+        VARINT_FIELD(height)
+        VARINT_FIELD(block_cumulative_size)
+        VARINT_FIELD(cumulative_difficulty)
+        VARINT_FIELD(already_generated_coins)
+        FIELD(transactions)
+      END_SERIALIZE()
+    };
+
+    struct TransactionIndex {
+      uint32_t block;
+      uint16_t transaction;
+
+      template<class Archive> void serialize(Archive& archive, unsigned int version);
+    };
+
     typedef std::unordered_map<crypto::hash, size_t> blocks_by_id_index;
     typedef std::unordered_map<crypto::hash, transaction_chain_entry> transactions_container;
     typedef std::unordered_set<crypto::key_image> key_images_container;
