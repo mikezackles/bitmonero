@@ -41,6 +41,16 @@ namespace {
   }
 }
 
+namespace std {
+  bool operator<(const crypto::hash& hash1, const crypto::hash& hash2) {
+    return memcmp(&hash1, &hash2, crypto::HASH_SIZE) < 0;
+  }
+
+  bool operator<(const crypto::key_image& keyImage1, const crypto::key_image& keyImage2) {
+    return memcmp(&keyImage1, &keyImage2, 32) < 0;
+  }
+}
+
 using namespace cryptonote;
 
 DISABLE_VS_WARNINGS(4267)
