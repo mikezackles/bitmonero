@@ -2,26 +2,20 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <include_base_utils.h>
+#include "blockchain_storage.h"
+
 #include <algorithm>
 #include <cstdio>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-#include "include_base_utils.h"
-#include "cryptonote_basic_impl.h"
-#include "blockchain_storage.h"
 #include "cryptonote_format_utils.h"
 #include "cryptonote_boost_serialization.h"
 #include "blockchain_storage_boost_serialization.h"
-#include "cryptonote_config.h"
-#include "miner.h"
-#include "misc_language.h"
 #include "profile_tools.h"
 #include "file_io_utils.h"
 #include "common/boost_serialization_helper.h"
-#include "warnings.h"
-#include "crypto/hash.h"
-//#include "serialization/json_archive.h"
 
 //namespace {
 //  std::string hashHex(const crypto::hash& hash) {
