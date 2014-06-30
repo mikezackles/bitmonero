@@ -3,27 +3,11 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #pragma once
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/version.hpp>
-#include <boost/serialization/list.hpp>
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/global_fun.hpp>
-#include <boost/multi_index/hashed_index.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/foreach.hpp>
-#include <atomic>
 
-#include "syncobj.h"
-#include "string_tools.h"
+#include "cryptonote_format_utils.h"
 #include "tx_pool.h"
-#include "cryptonote_basic.h"
 #include "common/util.h"
-#include "cryptonote_protocol/cryptonote_protocol_defs.h"
 #include "rpc/core_rpc_server_commands_defs.h"
-#include "difficulty.h"
-#include "cryptonote_core/cryptonote_format_utils.h"
-#include "verification_context.h"
-#include "crypto/hash.h"
 #include "checkpoints.h"
 
 namespace cryptonote {
