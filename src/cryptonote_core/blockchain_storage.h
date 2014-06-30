@@ -26,14 +26,8 @@
 #include "crypto/hash.h"
 #include "checkpoints.h"
 
-namespace cryptonote
-{
-
-  /************************************************************************/
-  /*                                                                      */
-  /************************************************************************/
-  class blockchain_storage
-  {
+namespace cryptonote {
+  class blockchain_storage {
   public:
     struct transaction_chain_entry
     {
@@ -60,8 +54,6 @@ namespace cryptonote
     bool deinit();
 
     void set_checkpoints(checkpoints&& chk_pts) { m_checkpoints = chk_pts; }
-
-    //bool push_new_block();
     bool get_blocks(uint64_t start_offset, size_t count, std::list<block>& blocks, std::list<transaction>& txs);
     bool get_blocks(uint64_t start_offset, size_t count, std::list<block>& blocks);
     bool get_alternative_blocks(std::list<block>& blocks);
@@ -110,46 +102,44 @@ namespace cryptonote
     uint64_t block_difficulty(size_t i);
 
     template<class t_ids_container, class t_blocks_container, class t_missed_container>
-    bool get_blocks(const t_ids_container& block_ids, t_blocks_container& blocks, t_missed_container& missed_bs)
-    {
+    bool get_blocks(const t_ids_container& block_ids, t_blocks_container& blocks, t_missed_container& missed_bs) {
       CRITICAL_REGION_LOCAL(m_blockchain_lock);
 
-      BOOST_FOREACH(const auto& bl_id, block_ids)
-      {
+      for (const auto& bl_id : block_ids) {
         auto it = m_blocks_index.find(bl_id);
-        if(it == m_blocks_index.end())
+        if(it == m_blocks_index.end()) {
           missed_bs.push_back(bl_id);
-        else
-        {
+        } else {
           CHECK_AND_ASSERT_MES(it->second < m_blocks.size(), false, "Internal error: bl_id=" << epee::string_tools::pod_to_hex(bl_id)
             << " have index record with offset="<<it->second<< ", bigger then m_blocks.size()=" << m_blocks.size());
             blocks.push_back(m_blocks[it->second].bl);
         }
       }
+
       return true;
     }
 
     template<class t_ids_container, class t_tx_container, class t_missed_container>
-    bool get_transactions(const t_ids_container& txs_ids, t_tx_container& txs, t_missed_container& missed_txs)
-    {
+    bool get_transactions(const t_ids_container& txs_ids, t_tx_container& txs, t_missed_container& missed_txs) {
       CRITICAL_REGION_LOCAL(m_blockchain_lock);
 
-      BOOST_FOREACH(const auto& tx_id, txs_ids)
-      {
+      for (const auto& tx_id : txs_ids) {
         auto it = m_transactions.find(tx_id);
-        if(it == m_transactions.end())
-        {
+        if(it == m_transactions.end()) {
           transaction tx;
-          if(!m_tx_pool.get_transaction(tx_id, tx))
+          if (!m_tx_pool.get_transaction(tx_id, tx)) {
             missed_txs.push_back(tx_id);
-          else
+          } else {
             txs.push_back(tx);
+          }
         }
         else
           txs.push_back(it->second.tx);
       }
+
       return true;
     }
+
     //debug functions
     void print_blockchain(uint64_t start_index, uint64_t end_index);
     void print_blockchain_index();
@@ -173,15 +163,11 @@ namespace cryptonote
     transactions_container m_transactions;
     key_images_container m_spent_keys;
     size_t m_current_block_cumul_sz_limit;
-
-
-    // all alternative chains
     blocks_ext_by_hash m_alternative_chains; // crypto::hash -> block_extended_info
 
     // some invalid blocks
     blocks_ext_by_hash m_invalid_blocks;     // crypto::hash -> block_extended_info
     outputs_container m_outputs;
-
 
     std::string m_config_folder;
     checkpoints m_checkpoints;
@@ -281,24 +267,17 @@ namespace cryptonote
         "m_current_block_cumul_sz_limit: " << m_current_block_cumul_sz_limit);
   }
 
-  //------------------------------------------------------------------
-  template<class visitor_t>
-  bool blockchain_storage::scan_outputkeys_for_indexes(const txin_to_key& tx_in_to_key, visitor_t& vis, uint64_t* pmax_related_block_height)
-  {
+  template<class visitor_t> bool blockchain_storage::scan_outputkeys_for_indexes(const txin_to_key& tx_in_to_key, visitor_t& vis, uint64_t* pmax_related_block_height) {
     CRITICAL_REGION_LOCAL(m_blockchain_lock);
     auto it = m_outputs.find(tx_in_to_key.amount);
-    if(it == m_outputs.end() || !tx_in_to_key.key_offsets.size())
+    if (it == m_outputs.end() || !tx_in_to_key.key_offsets.size())
       return false;
 
     std::vector<uint64_t> absolute_offsets = relative_output_offsets_to_absolute(tx_in_to_key.key_offsets);
-
-
     std::vector<std::pair<crypto::hash, size_t> >& amount_outs_vec = it->second;
     size_t count = 0;
-    BOOST_FOREACH(uint64_t i, absolute_offsets)
-    {
-      if(i >= amount_outs_vec.size() )
-      {
+    for (uint64_t i : absolute_offsets) {
+      if(i >= amount_outs_vec.size() ) {
         LOG_PRINT_L0("Wrong index in transaction inputs: " << i << ", expected maximum " << amount_outs_vec.size() - 1);
         return false;
       }
@@ -311,10 +290,11 @@ namespace cryptonote
         LOG_PRINT_L0("Failed to handle_output for output no = " << count << ", with absolute offset " << i);
         return false;
       }
-      if(count++ == absolute_offsets.size()-1 && pmax_related_block_height)
-      {
-        if(*pmax_related_block_height < tx_it->second.m_keeper_block_height)
+
+      if(count++ == absolute_offsets.size()-1 && pmax_related_block_height) {
+        if(*pmax_related_block_height < tx_it->second.m_keeper_block_height) {
           *pmax_related_block_height = tx_it->second.m_keeper_block_height;
+        }
       }
     }
 
