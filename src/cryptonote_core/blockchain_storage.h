@@ -45,8 +45,7 @@ namespace cryptonote {
     crypto::hash get_block_id_by_height(uint64_t height);
     bool get_block_by_hash(const crypto::hash &h, block &blk);
 
-    template<class archive_t>
-    void serialize(archive_t & ar, const unsigned int version);
+    template<class archive_t> void serialize(archive_t & ar, const unsigned int version);
 
     bool have_tx(const crypto::hash &id);
     bool have_tx_keyimges_as_spent(const transaction &tx);
