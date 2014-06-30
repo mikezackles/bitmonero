@@ -339,19 +339,6 @@ bool blockchain_storage::get_block_by_hash(const crypto::hash &h, block &blk) {
 
   return false;
 }
-//------------------------------------------------------------------
-void blockchain_storage::get_all_known_block_ids(std::list<crypto::hash> &main, std::list<crypto::hash> &alt, std::list<crypto::hash> &invalid) {
-  CRITICAL_REGION_LOCAL(m_blockchain_lock);
-
-  BOOST_FOREACH(blocks_by_id_index::value_type &v, m_blocks_index)
-    main.push_back(v.first);
-
-  BOOST_FOREACH(blocks_ext_by_hash::value_type &v, m_alternative_chains)
-    alt.push_back(v.first);
-
-  BOOST_FOREACH(blocks_ext_by_hash::value_type &v, m_invalid_blocks)
-    invalid.push_back(v.first);
-}
 
 difficulty_type blockchain_storage::get_difficulty_for_next_block() {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
