@@ -15,6 +15,8 @@
 #include "cryptonote_format_utils.h"
 #include "file_io_utils.h"
 #include "common/command_line.h"
+#include "crypto/hash.h"
+#include "crypto/random.h"
 #include "string_coding.h"
 #include "storages/portable_storage_template_helper.h"
 
@@ -252,12 +254,12 @@ namespace cryptonote
     return true;
   }
   //-----------------------------------------------------------------------------------------------------
-  bool miner::find_nonce_for_given_block(block& bl, const difficulty_type& diffic, uint64_t height)
+  bool miner::find_nonce_for_given_block(crypto::cn_context &context, block& bl, const difficulty_type& diffic, uint64_t height)
   {
     for(; bl.nonce != std::numeric_limits<uint32_t>::max(); bl.nonce++)
     {
       crypto::hash h;
-      get_block_longhash(bl, h, height);
+      get_block_longhash(context, bl, h, height);
 
       if(check_hash(h, diffic))
       {
@@ -308,6 +310,7 @@ namespace cryptonote
     uint64_t height = 0;
     difficulty_type local_diff = 0;
     uint32_t local_template_ver = 0;
+    crypto::cn_context context;
     block b;
     while(!m_stop)
     {
@@ -338,7 +341,7 @@ namespace cryptonote
 
       b.nonce = nonce;
       crypto::hash h;
-      get_block_longhash(b, h, height);
+      get_block_longhash(context, b, h, height);
 
       if(!m_stop && check_hash(h, local_diff))
       {
