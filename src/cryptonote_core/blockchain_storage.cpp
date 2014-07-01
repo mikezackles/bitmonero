@@ -55,6 +55,41 @@ using namespace cryptonote;
 
 DISABLE_VS_WARNINGS(4267)
 
+namespace cryptonote {
+  struct transaction_chain_entry {
+    transaction tx;
+    uint64_t m_keeper_block_height;
+    size_t m_blob_size;
+    std::vector<uint64_t> m_global_output_indexes;
+
+    template<class archive_t> void serialize(archive_t & ar, unsigned int version);
+  };
+
+  struct block_extended_info {
+    block   bl;
+    uint64_t height;
+    size_t block_cumulative_size;
+    difficulty_type cumulative_difficulty;
+    uint64_t already_generated_coins;
+
+    template<class archive_t> void serialize(archive_t & ar, unsigned int version);
+  };
+
+  template<class archive_t> void transaction_chain_entry::serialize(archive_t & ar, unsigned int version) {
+    ar & tx;
+    ar & m_keeper_block_height;
+    ar & m_blob_size;
+    ar & m_global_output_indexes;
+  }
+
+  template<class archive_t> void block_extended_info::serialize(archive_t & ar, unsigned int version) {
+    ar & bl;
+    ar & height;
+    ar & cumulative_difficulty;
+    ar & block_cumulative_size;
+    ar & already_generated_coins;
+  }
+}
 bool blockchain_storage::have_tx(const crypto::hash &id) {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_transactions.find(id) != m_transactions.end();
