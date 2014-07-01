@@ -416,6 +416,7 @@ namespace cryptonote
       error_resp.message = "Block not accepted";
       return false;
     }
+
     res.status = CORE_RPC_STATUS_OK;
     return true;
   }
