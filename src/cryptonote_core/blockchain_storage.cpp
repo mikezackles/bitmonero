@@ -1269,13 +1269,12 @@ bool blockchain_storage::push_transaction_to_global_outs_index(const transaction
   }
   return true;
 }
-//------------------------------------------------------------------
-size_t blockchain_storage::get_total_transactions()
-{
+
+size_t blockchain_storage::get_total_transactions() {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_transactions.size();
 }
-//------------------------------------------------------------------
+
 bool blockchain_storage::get_outs(uint64_t amount, std::list<crypto::public_key>& pkeys)
 {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
