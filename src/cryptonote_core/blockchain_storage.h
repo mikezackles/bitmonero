@@ -262,4 +262,4 @@ namespace cryptonote {
 }
 
 
-
+#include "blockchain_storage_boost_serialization.h"
