@@ -644,12 +644,12 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------
-  bool get_block_longhash(const block& b, crypto::hash& res, uint64_t height)
+  bool get_block_longhash(crypto::cn_context &context, const block& b, crypto::hash& res, uint64_t height)
   {
     blobdata bd;
     if(!get_block_hashing_blob(b, bd))
       return false;
-    crypto::cn_slow_hash(bd.data(), bd.size(), res);
+    crypto::cn_slow_hash(context, bd.data(), bd.size(), res);
     return true;
   }
   //---------------------------------------------------------------
@@ -673,10 +673,10 @@ namespace cryptonote
     return res;
   }
   //---------------------------------------------------------------
-  crypto::hash get_block_longhash(const block& b, uint64_t height)
+  crypto::hash get_block_longhash(crypto::cn_context &context, const block& b, uint64_t height)
   {
     crypto::hash p = null_hash;
-    get_block_longhash(b, p, height);
+    get_block_longhash(context, b, p, height);
     return p;
   }
   //---------------------------------------------------------------
