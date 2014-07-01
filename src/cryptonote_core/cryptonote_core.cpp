@@ -75,9 +75,9 @@ namespace cryptonote
   {
     return m_blockchain_storage.get_blocks(start_offset, count, blocks);
   }  //-----------------------------------------------------------------------------------------------
-  bool core::get_transactions(const std::vector<crypto::hash>& txs_ids, std::list<transaction>& txs, std::list<crypto::hash>& missed_txs)
+  void core::get_transactions(const std::vector<crypto::hash>& txs_ids, std::list<transaction>& txs, std::list<crypto::hash>& missed_txs)
   {
-    return m_blockchain_storage.get_transactions(txs_ids, txs, missed_txs);
+    m_blockchain_storage.get_transactions(txs_ids, txs, missed_txs);
   }
   //-----------------------------------------------------------------------------------------------
   bool core::get_transaction(const crypto::hash &h, transaction &tx)
@@ -471,9 +471,9 @@ namespace cryptonote
     return true;
   }
   //-----------------------------------------------------------------------------------------------
-  bool core::get_pool_transactions(std::list<transaction>& txs)
+  void core::get_pool_transactions(std::list<transaction>& txs)
   {
-    return m_mempool.get_transactions(txs);
+    m_mempool.get_transactions(txs);
   }
   //-----------------------------------------------------------------------------------------------
   bool core::get_short_chain_history(std::list<crypto::hash>& ids)

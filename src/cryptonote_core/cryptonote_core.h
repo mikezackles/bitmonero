@@ -56,7 +56,7 @@ namespace cryptonote
        return m_blockchain_storage.get_blocks(block_ids, blocks, missed_bs);
      }
      crypto::hash get_block_id_by_height(uint64_t height);
-     bool get_transactions(const std::vector<crypto::hash>& txs_ids, std::list<transaction>& txs, std::list<crypto::hash>& missed_txs);
+     void get_transactions(const std::vector<crypto::hash>& txs_ids, std::list<transaction>& txs, std::list<crypto::hash>& missed_txs);
      bool get_transaction(const crypto::hash &h, transaction &tx);
      bool get_block_by_hash(const crypto::hash &h, block &blk);
      //void get_all_known_block_ids(std::list<crypto::hash> &main, std::list<crypto::hash> &alt, std::list<crypto::hash> &invalid);
@@ -67,7 +67,7 @@ namespace cryptonote
      void set_cryptonote_protocol(i_cryptonote_protocol* pprotocol);
      void set_checkpoints(checkpoints&& chk_pts);
 
-     bool get_pool_transactions(std::list<transaction>& txs);
+     void get_pool_transactions(std::list<transaction>& txs);
      size_t get_pool_transactions_count();
      size_t get_blockchain_total_transactions();
      //bool get_outs(uint64_t amount, std::list<crypto::public_key>& pkeys);
