@@ -90,6 +90,24 @@ namespace cryptonote {
     ar & already_generated_coins;
   }
 }
+
+template<class Archive> void cryptonote::blockchain_storage::Transaction::serialize(Archive& archive, unsigned int version) {
+  archive & tx;
+}
+
+template<class Archive> void cryptonote::blockchain_storage::Block::serialize(Archive& archive, unsigned int version) {
+  archive & bl;
+  archive & height;
+  archive & block_cumulative_size;
+  archive & cumulative_difficulty;
+  archive & already_generated_coins;
+  archive & transactions;
+}
+
+template<class Archive> void cryptonote::blockchain_storage::TransactionIndex::serialize(Archive& archive, unsigned int version) {
+  archive & block;
+  archive & transaction;
+}
 bool blockchain_storage::have_tx(const crypto::hash &id) {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_transactions.find(id) != m_transactions.end();
