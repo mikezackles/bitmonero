@@ -55,9 +55,7 @@ using namespace cryptonote;
 
 DISABLE_VS_WARNINGS(4267)
 
-//------------------------------------------------------------------
-bool blockchain_storage::have_tx(const crypto::hash &id)
-{
+bool blockchain_storage::have_tx(const crypto::hash &id) {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_transactions.find(id) != m_transactions.end();
 }
