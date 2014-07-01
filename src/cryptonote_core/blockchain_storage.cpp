@@ -169,6 +169,7 @@ namespace cryptonote {
 
 BOOST_CLASS_VERSION(cryptonote::blockchain_storage, CURRENT_BLOCKCHAIN_STORAGE_ARCHIVE_VER)
 
+
 bool blockchain_storage::have_tx(const crypto::hash &id) {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_transactions.find(id) != m_transactions.end();
@@ -188,9 +189,8 @@ transaction *blockchain_storage::get_tx(const crypto::hash &id)
 
   return &it->second.tx;
 }
-//------------------------------------------------------------------
-uint64_t blockchain_storage::get_current_blockchain_height()
-{
+
+uint64_t blockchain_storage::get_current_blockchain_height() {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
   return m_blocks.size();
 }
