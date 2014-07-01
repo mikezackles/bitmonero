@@ -431,7 +431,7 @@ crypto::hash blockchain_storage::get_block_id_by_height(uint64_t height) {
 
   return get_block_hash(m_blocks[height].bl);
 }
-//------------------------------------------------------------------
+
 bool blockchain_storage::get_block_by_hash(const crypto::hash &h, block &blk) {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
 
@@ -1238,16 +1238,13 @@ bool blockchain_storage::add_block_as_invalid(const block_extended_info& bei, co
 bool blockchain_storage::have_block(const crypto::hash& id)
 {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
-  if(m_blocks_index.count(id))
+  if (m_blocks_index.count(id))
     return true;
-  if(m_alternative_chains.count(id))
-    return true;
-  /*if(m_orphaned_blocks.get<by_id>().count(id))
-    return true;*/
 
-  /*if(m_orphaned_by_tx.count(id))
-    return true;*/
-  if(m_invalid_blocks.count(id))
+  if (m_alternative_chains.count(id))
+    return true;
+
+  if (m_invalid_blocks.count(id))
     return true;
 
   return false;
