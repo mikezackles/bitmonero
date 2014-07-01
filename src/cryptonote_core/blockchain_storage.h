@@ -106,9 +106,9 @@ namespace cryptonote {
           } else {
             txs.push_back(tx);
           }
-        }
-        else
+        } else {
           txs.push_back(it->second.tx);
+        }
       }
 
       return true;
