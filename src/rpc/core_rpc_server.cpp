@@ -175,12 +175,7 @@ namespace cryptonote
     }
     std::list<crypto::hash> missed_txs;
     std::list<transaction> txs;
-    bool r = m_core.get_transactions(vh, txs, missed_txs);
-    if(!r)
-    {
-      res.status = "Failed";
-      return true;
-    }
+    m_core.get_transactions(vh, txs, missed_txs);
 
     BOOST_FOREACH(auto& tx, txs)
     {
