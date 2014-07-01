@@ -17,7 +17,7 @@ namespace CryptoNote {
 
 typedef size_t TransactionId;
 typedef size_t TransferId;
-typedef std::array<uint8_t, 32> TransacitonHash;
+typedef std::array<uint8_t, 32> TransactionHash;
 
 struct Transfer {
   std::string address;
@@ -33,7 +33,7 @@ struct Transaction {
   size_t          transferCount;
   int64_t         totalAmount;
   uint64_t        fee;
-  TransacitonHash hash;
+  TransactionHash hash;
   bool            isCoinbase;
   uint64_t        blockHeight;
   uint64_t        timestamp;
