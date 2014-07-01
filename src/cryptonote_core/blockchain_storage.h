@@ -225,68 +225,6 @@ namespace cryptonote {
   };
 
 
-  /************************************************************************/
-  /*                                                                      */
-  /************************************************************************/
-
-  #define CURRENT_BLOCKCHAIN_STORAGE_ARCHIVE_VER    12
-
-  template<class archive_t>
-  void blockchain_storage::serialize(archive_t & ar, const unsigned int version)
-  {
-    if(version < 11)
-      return;
-    CRITICAL_REGION_LOCAL(m_blockchain_lock);
-    ar & m_blocks;
-    ar & m_blocks_index;
-    ar & m_transactions;
-    ar & m_spent_keys;
-    ar & m_alternative_chains;
-    ar & m_outputs;
-    ar & m_invalid_blocks;
-    ar & m_current_block_cumul_sz_limit;
-    /*serialization bug workaround*/
-    if(version > 11)
-    {
-      uint64_t total_check_count = m_blocks.size() + m_blocks_index.size() + m_transactions.size() + m_spent_keys.size() + m_alternative_chains.size() + m_outputs.size() + m_invalid_blocks.size() + m_current_block_cumul_sz_limit;
-      if(archive_t::is_saving::value)
-      {        
-        ar & total_check_count;
-      }else
-      {
-        uint64_t total_check_count_loaded = 0;
-        ar & total_check_count_loaded;
-        if(total_check_count != total_check_count_loaded)
-        {
-          LOG_ERROR("Blockchain storage data corruption detected. total_count loaded from file = " << total_check_count_loaded << ", expected = " << total_check_count);
-
-          LOG_PRINT_L0("Blockchain storage:" << ENDL << 
-            "m_blocks: " << m_blocks.size() << ENDL  << 
-            "m_blocks_index: " << m_blocks_index.size() << ENDL  << 
-            "m_transactions: " << m_transactions.size() << ENDL  << 
-            "m_spent_keys: " << m_spent_keys.size() << ENDL  << 
-            "m_alternative_chains: " << m_alternative_chains.size() << ENDL  << 
-            "m_outputs: " << m_outputs.size() << ENDL  << 
-            "m_invalid_blocks: " << m_invalid_blocks.size() << ENDL  << 
-            "m_current_block_cumul_sz_limit: " << m_current_block_cumul_sz_limit);
-
-          throw std::runtime_error("Blockchain data corruption");
-        }
-      }
-    }
-
-
-    LOG_PRINT_L2("Blockchain storage:" << ENDL << 
-        "m_blocks: " << m_blocks.size() << ENDL  << 
-        "m_blocks_index: " << m_blocks_index.size() << ENDL  << 
-        "m_transactions: " << m_transactions.size() << ENDL  << 
-        "m_spent_keys: " << m_spent_keys.size() << ENDL  << 
-        "m_alternative_chains: " << m_alternative_chains.size() << ENDL  << 
-        "m_outputs: " << m_outputs.size() << ENDL  << 
-        "m_invalid_blocks: " << m_invalid_blocks.size() << ENDL  << 
-        "m_current_block_cumul_sz_limit: " << m_current_block_cumul_sz_limit);
-  }
-
   template<class visitor_t> bool blockchain_storage::scan_outputkeys_for_indexes(const txin_to_key& tx_in_to_key, visitor_t& vis, uint64_t* pmax_related_block_height) {
     CRITICAL_REGION_LOCAL(m_blockchain_lock);
     auto it = m_outputs.find(tx_in_to_key.amount);
@@ -324,4 +262,3 @@ namespace cryptonote {
 
 
 
-BOOST_CLASS_VERSION(cryptonote::blockchain_storage, CURRENT_BLOCKCHAIN_STORAGE_ARCHIVE_VER)
