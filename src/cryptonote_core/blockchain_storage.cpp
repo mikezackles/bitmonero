@@ -261,6 +261,21 @@ bool blockchain_storage::deinit() {
   return store_blockchain();
 }
 
+bool blockchain_storage::reset_and_set_genesis_block(const block& b) {
+  CRITICAL_REGION_LOCAL(m_blockchain_lock);
+  m_blocks.clear();
+  m_blocks_index.clear();
+  m_transactions.clear();
+
+  m_spent_keys.clear();
+  m_alternative_chains.clear();
+  m_outputs.clear();
+
+  block_verification_context bvc = boost::value_initialized<block_verification_context>();
+  add_new_block(b, bvc);
+  return bvc.m_added_to_main_chain && !bvc.m_verifivation_failed;
+}
+
 bool blockchain_storage::pop_block_from_blockchain() {
   CRITICAL_REGION_LOCAL(m_blockchain_lock);
 
@@ -279,21 +294,6 @@ bool blockchain_storage::pop_block_from_blockchain() {
   m_blocks.pop_back();
   m_tx_pool.on_blockchain_dec(m_blocks.size()-1, get_tail_id());
   return true;
-}
-//------------------------------------------------------------------
-bool blockchain_storage::reset_and_set_genesis_block(const block& b)
-{
-  CRITICAL_REGION_LOCAL(m_blockchain_lock);
-  m_transactions.clear();
-  m_spent_keys.clear();
-  m_blocks.clear();
-  m_blocks_index.clear();
-  m_alternative_chains.clear();
-  m_outputs.clear();
-
-  block_verification_context bvc = boost::value_initialized<block_verification_context>();
-  add_new_block(b, bvc);
-  return bvc.m_added_to_main_chain && !bvc.m_verifivation_failed;
 }
 //------------------------------------------------------------------
 bool blockchain_storage::purge_transaction_keyimages_from_blockchain(const transaction& tx, bool strict_check)
