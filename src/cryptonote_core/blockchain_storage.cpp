@@ -1538,6 +1538,29 @@ bool blockchain_storage::check_block_timestamp(std::vector<uint64_t> timestamps,
 
   return true;
 }
+
+bool blockchain_storage::add_new_block(const block& bl_, block_verification_context& bvc) {
+  //copy block here to let modify block.target
+  block bl = bl_;
+  crypto::hash id = get_block_hash(bl);
+  CRITICAL_REGION_LOCAL(m_tx_pool);//to avoid deadlock lets lock tx_pool for whole add/reorganize process
+  CRITICAL_REGION_LOCAL1(m_blockchain_lock);
+  if (have_block(id)) {
+    LOG_PRINT_L3("block with id = " << id << " already exists");
+    bvc.m_already_exists = true;
+    return false;
+  }
+
+  //check that block refers to chain tail
+  if (!(bl.prev_id == get_tail_id())) {
+    //chain switching or wrong block
+    bvc.m_added_to_main_chain = false;
+    return handle_alternative_block(bl, id, bvc);
+    //never relay alternative blocks
+  }
+
+  return handle_block_to_main_chain(bl, id, bvc);
+}
 //------------------------------------------------------------------
 bool blockchain_storage::handle_block_to_main_chain(const block& bl, const crypto::hash& id, block_verification_context& bvc)
 {
@@ -1709,30 +1732,4 @@ bool blockchain_storage::update_next_comulative_size_limit()
 
   m_current_block_cumul_sz_limit = median*2;
   return true;
-}
-//------------------------------------------------------------------
-bool blockchain_storage::add_new_block(const block& bl_, block_verification_context& bvc)
-{
-  //copy block here to let modify block.target
-  block bl = bl_;
-  crypto::hash id = get_block_hash(bl);
-  CRITICAL_REGION_LOCAL(m_tx_pool);//to avoid deadlock lets lock tx_pool for whole add/reorganize process
-  CRITICAL_REGION_LOCAL1(m_blockchain_lock);
-  if(have_block(id))
-  {
-    LOG_PRINT_L3("block with id = " << id << " already exists");
-    bvc.m_already_exists = true;
-    return false;
-  }
-
-  //check that block refers to chain tail
-  if(!(bl.prev_id == get_tail_id()))
-  {
-    //chain switching or wrong block
-    bvc.m_added_to_main_chain = false;
-    return handle_alternative_block(bl, id, bvc);
-    //never relay alternative blocks
-  }
-
-  return handle_block_to_main_chain(bl, id, bvc);
 }
