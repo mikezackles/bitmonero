@@ -640,7 +640,7 @@ namespace cryptonote
     bl.minor_version = CURRENT_BLOCK_MINOR_VERSION;
     bl.timestamp = 0;
     bl.nonce = 70;
-    miner::find_nonce_for_given_block(bl, 1, 0);
+    //miner::find_nonce_for_given_block(bl, 1, 0);
     return true;
   }
   //---------------------------------------------------------------
