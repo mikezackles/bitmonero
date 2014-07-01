@@ -162,7 +162,7 @@ namespace mining
         if(  ((uint32_t*)&h)[7] < job.target )
         {
           //found!
-          
+
           COMMAND_RPC_SUBMITSHARE::request submit_request = AUTO_VAL_INIT(submit_request);
           COMMAND_RPC_SUBMITSHARE::response submit_response = AUTO_VAL_INIT(submit_response);
           submit_request.id     = pool_session_id;
