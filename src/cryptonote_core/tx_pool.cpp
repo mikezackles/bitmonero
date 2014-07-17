@@ -178,13 +178,13 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------------------------
-  size_t tx_memory_pool::get_transactions_count()
+  size_t tx_memory_pool::get_transactions_count() const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     return m_transactions.size();
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::get_transactions(std::list<transaction>& txs)
+  bool tx_memory_pool::get_transactions(std::list<transaction>& txs) const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     BOOST_FOREACH(const auto& tx_vt, m_transactions)
@@ -213,7 +213,7 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::have_tx(const crypto::hash &id)
+  bool tx_memory_pool::have_tx(const crypto::hash &id) const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     if(m_transactions.count(id))
@@ -221,7 +221,7 @@ namespace cryptonote
     return false;
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::have_tx_keyimges_as_spent(const transaction& tx)
+  bool tx_memory_pool::have_tx_keyimges_as_spent(const transaction& tx) const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     BOOST_FOREACH(const auto& in, tx.vin)
@@ -233,23 +233,23 @@ namespace cryptonote
     return false;
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::have_tx_keyimg_as_spent(const crypto::key_image& key_im)
+  bool tx_memory_pool::have_tx_keyimg_as_spent(const crypto::key_image& key_im) const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     return m_spent_key_images.end() != m_spent_key_images.find(key_im);
   }
   //---------------------------------------------------------------------------------
-  void tx_memory_pool::lock()
+  void tx_memory_pool::lock() const
   {
     m_transactions_lock.lock();
   }
   //---------------------------------------------------------------------------------
-  void tx_memory_pool::unlock()
+  void tx_memory_pool::unlock() const
   {
     m_transactions_lock.unlock();
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::is_transaction_ready_to_go(tx_details& txd)
+  bool tx_memory_pool::is_transaction_ready_to_go(tx_details& txd) const
   {
     //not the best implementation at this time, sorry :(
     //check is ring_signature already checked ?
@@ -313,7 +313,7 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------------------------
-  std::string tx_memory_pool::print_pool(bool short_format)
+  std::string tx_memory_pool::print_pool(bool short_format) const
   {
     std::stringstream ss;
     CRITICAL_REGION_LOCAL(m_transactions_lock);
