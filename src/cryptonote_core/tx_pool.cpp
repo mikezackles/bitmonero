@@ -56,6 +56,13 @@ namespace cryptonote
       return false;
     }
 
+    uint64_t fee = inputs_amount - outputs_amount;
+    if (!kept_by_block && fee < MINIMUM_FEE) {
+      LOG_ERROR("transaction fee is not enought: " << print_money(fee) << ", minumim fee: " << print_money(MINIMUM_FEE));
+      tvc.m_verifivation_failed = true;
+      return false;
+    }
+
     if (!kept_by_block && blob_size >= TRANSACTION_SIZE_LIMIT) {
       LOG_ERROR("transaction is too big: " << blob_size << " bytes, maximum size: " << TRANSACTION_SIZE_LIMIT);
       tvc.m_verifivation_failed = true;
