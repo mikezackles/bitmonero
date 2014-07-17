@@ -184,13 +184,11 @@ namespace cryptonote
     return m_transactions.size();
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::get_transactions(std::list<transaction>& txs) const
+  void tx_memory_pool::get_transactions(std::list<transaction>& txs) const
   {
     CRITICAL_REGION_LOCAL(m_transactions_lock);
     BOOST_FOREACH(const auto& tx_vt, m_transactions)
       txs.push_back(tx_vt.second.tx);
-
-    return true;
   }
   //---------------------------------------------------------------------------------
   bool tx_memory_pool::on_blockchain_inc(uint64_t new_block_height, const crypto::hash& top_block_id)
