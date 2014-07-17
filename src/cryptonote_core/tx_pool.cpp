@@ -391,7 +391,8 @@ namespace cryptonote
       }
     }
 
-    return res;
+    // Ignore deserialization error
+    return true;
   }
 
   //---------------------------------------------------------------------------------
