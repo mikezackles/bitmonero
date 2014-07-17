@@ -88,7 +88,7 @@ namespace cryptonote
     typedef std::unordered_map<crypto::hash, tx_details > transactions_container;
     typedef std::unordered_map<crypto::key_image, std::unordered_set<crypto::hash> > key_images_container;
 
-    epee::critical_section m_transactions_lock;
+    mutable epee::critical_section m_transactions_lock;
     transactions_container m_transactions;
     key_images_container m_spent_key_images;
 
