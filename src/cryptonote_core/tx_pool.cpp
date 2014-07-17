@@ -193,16 +193,6 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------------------------
-  bool tx_memory_pool::get_transaction(const crypto::hash& id, transaction& tx)
-  {
-    CRITICAL_REGION_LOCAL(m_transactions_lock);
-    auto it = m_transactions.find(id);
-    if(it == m_transactions.end())
-      return false;
-    tx = it->second.tx;
-    return true;
-  }
-  //---------------------------------------------------------------------------------
   bool tx_memory_pool::on_blockchain_inc(uint64_t new_block_height, const crypto::hash& top_block_id)
   {
     return true;

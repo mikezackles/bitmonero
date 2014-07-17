@@ -46,7 +46,6 @@ namespace cryptonote
     bool deinit();
     bool fill_block_template(block &bl, size_t median_size, uint64_t already_generated_coins, size_t &total_size, uint64_t &fee);
     bool get_transactions(std::list<transaction>& txs) const;
-    bool get_transaction(const crypto::hash& h, transaction& tx);
     size_t get_transactions_count() const;
     std::string print_pool(bool short_format) const;
 
