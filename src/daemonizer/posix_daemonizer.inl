@@ -32,7 +32,7 @@ namespace daemonizer
   }
 
   template <typename T_executor>
-  inline bool daemonize(
+  inline int daemonize(
       int argc, char const * argv[]
     , T_executor && executor // universal ref
     , boost::program_options::variables_map const & vm
@@ -41,8 +41,14 @@ namespace daemonizer
     if (command_line::arg_present(vm, arg_detach))
     {
       tools::success_msg_writer() << "Forking to background...";
+      // Here we give the daemon init a chance to error out before we fork
+      auto maybe_daemon = executor.create_daemon(vm);
+      if (maybe_daemon.which() == 1)
+      {
+        return boost::get<int>(maybe_daemon);
+      }
       posix::fork();
-      return executor.create_daemon(vm).run();
+      return boost::get<typename T_executor::t_daemon>(maybe_daemon).run();
     }
     else
     {

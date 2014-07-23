@@ -3,6 +3,7 @@
 #include "daemon/daemon.h"
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/variant/variant.hpp>
 #include <string>
 #include <vector>
 
@@ -21,11 +22,11 @@ namespace daemonize
 
     std::string const & name();
 
-    t_daemon create_daemon(
+    boost::variant<t_daemon, int> create_daemon(
         boost::program_options::variables_map const & vm
       );
 
-    bool run_interactive(
+    int run_interactive(
         boost::program_options::variables_map const & vm
       );
   };

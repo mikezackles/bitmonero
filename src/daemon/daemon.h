@@ -20,7 +20,7 @@ public:
   t_daemon & operator=(t_daemon && other);
   ~t_daemon();
 
-  bool run();
+  int run();
   void stop();
 };
 }

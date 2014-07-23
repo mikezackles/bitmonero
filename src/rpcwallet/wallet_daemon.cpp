@@ -5,20 +5,34 @@
 
 namespace tools {
 
-t_wallet_daemon::t_wallet_daemon(
-      std::string wallet_file
-    , std::string wallet_password
-    , std::string daemon_address
-    , std::string bind_ip
-    , std::string port
+boost::variant<t_wallet_daemon, int> t_wallet_daemon::create(
+    std::string wallet_file
+  , std::string wallet_password
+  , std::string daemon_address
+  , std::string bind_ip
+  , std::string port
   )
-  : mp_server{new wallet_rpc_server{
-      wallet_file
-    , wallet_password
-    , daemon_address
-    , std::move(bind_ip)
-    , std::move(port)
-    }}
+{
+  try
+  {
+    return t_wallet_daemon{new wallet_rpc_server{
+        wallet_file
+      , wallet_password
+      , daemon_address
+      , std::move(bind_ip)
+      , std::move(port)
+      }};
+  }
+  catch (...)
+  {
+    return 1;
+  }
+}
+
+t_wallet_daemon::t_wallet_daemon(
+    wallet_rpc_server * p_server
+  )
+  : mp_server{p_server}
 {}
 
 t_wallet_daemon::~t_wallet_daemon() = default;
@@ -44,7 +58,7 @@ t_wallet_daemon & t_wallet_daemon::operator=(t_wallet_daemon && other)
   return *this;
 }
 
-bool t_wallet_daemon::run()
+int t_wallet_daemon::run()
 {
   if (nullptr == mp_server)
   {
@@ -56,17 +70,17 @@ bool t_wallet_daemon::run()
   try
   {
     mp_server->run();
-    return true;
+    return 0;
   }
   catch (std::exception const & ex)
   {
     LOG_ERROR("Wallet daemon exception: " << ex.what());
-    return false;
+    return 1;
   }
   catch (...)
   {
     LOG_ERROR("Unknown wallet daemon exception");
-    return false;
+    return 1;
   }
 }
 

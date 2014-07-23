@@ -16,7 +16,7 @@ namespace daemonizer
     );
 
   template <typename T_executor>
-  bool daemonize(
+  int daemonize(
       int argc, char const * argv[]
     , T_executor && executor // universal ref
     , boost::program_options::variables_map const & vm

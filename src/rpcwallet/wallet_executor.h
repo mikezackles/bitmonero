@@ -4,6 +4,7 @@
 #include "rpcwallet/wallet_daemon.h"
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/variant.hpp>
 #include <string>
 #include <vector>
 
@@ -28,11 +29,11 @@ namespace tools
 
     std::string const & name();
 
-    t_wallet_daemon create_daemon(
+    boost::variant<t_wallet_daemon, int> create_daemon(
         boost::program_options::variables_map const & vm
       );
 
-    bool run_interactive(
+    int run_interactive(
         boost::program_options::variables_map const & vm
       );
   };

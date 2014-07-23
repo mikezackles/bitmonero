@@ -24,20 +24,34 @@ namespace daemonize
     return NAME;
   }
 
-  t_daemon t_executor::create_daemon(
+  boost::variant<t_daemon, int> t_executor::create_daemon(
       boost::program_options::variables_map const & vm
     )
   {
     LOG_PRINT_L0(CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG);
-    return t_daemon{vm};
+    try
+    {
+      return t_daemon{vm};
+    }
+    catch (...)
+    {
+      return 1;
+    }
   }
 
-  bool t_executor::run_interactive(
+  int t_executor::run_interactive(
       boost::program_options::variables_map const & vm
     )
   {
     epee::log_space::log_singletone::add_logger(LOGGER_CONSOLE, NULL, NULL);
-    return t_daemon{vm}.run();
+    try
+    {
+      return t_daemon{vm}.run();
+    }
+    catch (...)
+    {
+      return 1;
+    }
   }
 }
 

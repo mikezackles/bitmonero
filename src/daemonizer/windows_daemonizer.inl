@@ -77,7 +77,7 @@ namespace daemonizer
   }
 
   template <typename T_executor>
-  inline bool daemonize(
+  inline int daemonize(
       int argc, char const * argv[]
     , T_executor && executor // universal ref
     , boost::program_options::variables_map const & vm
@@ -88,39 +88,62 @@ namespace daemonizer
     if (command_line::arg_present(vm, arg_is_service))
     {
       //LOG_PRINT_L0(CRYPTONOTE_NAME << " v" << PROJECT_VERSION_LONG);
-      windows::t_service_runner<T_executor::t_daemon>::run(
-        executor.name()
-      , executor.create_daemon(vm)
-      );
-      return true;
+      auto maybe_daemon = executor.create_daemon(vm);
+      // TODO!! - There is not yet a way to retrieve the return code when
+      // running as a service.  It should probably be set here using
+      // SetServiceStatus.
+      if (maybe_daemon.which() == 0)
+      {
+        windows::t_service_runner<T_executor::t_daemon>::run(
+          executor.name()
+        , boost::get<typename T_executor::t_daemon>(maybe_daemon)
+        );
+        return 0;
+      }
+      else
+      {
+        return boost::get<int>(maybe_daemon);
+      }
     }
     else if (command_line::arg_present(vm, arg_install_service))
     {
       if (windows::ensure_admin(arguments))
       {
         arguments += " --run-as-service";
-        return windows::install_service(executor.name(), arguments);
+        if (windows::install_service(executor.name(), arguments))
+        {
+          return 0;
+        }
       }
     }
     else if (command_line::arg_present(vm, arg_uninstall_service))
     {
       if (windows::ensure_admin(arguments))
       {
-        return windows::uninstall_service(executor.name());
+        if (windows::uninstall_service(executor.name()))
+        {
+          return 0;
+        }
       }
     }
     else if (command_line::arg_present(vm, arg_start_service))
     {
       if (windows::ensure_admin(arguments))
       {
-        return windows::start_service(executor.name());
+        if (windows::start_service(executor.name()))
+        {
+          return 0;
+        }
       }
     }
     else if (command_line::arg_present(vm, arg_stop_service))
     {
       if (windows::ensure_admin(arguments))
       {
-        return windows::stop_service(executor.name());
+        if (windows::stop_service(executor.name()))
+        {
+          return 0;
+        }
       }
     }
     else // interactive
@@ -129,6 +152,6 @@ namespace daemonizer
       return executor.run_interactive(vm);
     }
 
-    return false;
+    return 1;
   }
 }

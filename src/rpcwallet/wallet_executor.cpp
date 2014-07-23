@@ -20,21 +20,24 @@ namespace tools
     const command_line::arg_descriptor<std::string>   arg_rpc_bind_port    = {"rpc-bind-port", "Starts wallet as rpc server for wallet operations, sets bind port for server", "", true};
     const command_line::arg_descriptor<std::string>   arg_rpc_bind_ip      = {"rpc-bind-ip", "Specify ip to bind rpc server", "127.0.0.1"};
 
-    t_wallet_daemon create_daemon(
+    boost::variant<t_wallet_daemon, int> create_daemon(
         boost::program_options::variables_map const & vm
       )
     {
       if(!command_line::has_arg(vm, arg_wallet_file) )
       {
-        throw std::runtime_error{"Wallet file not set."};
+        LOG_PRINT_L0("Wallet file not set");
+        return 1;
       }
       if(!command_line::has_arg(vm, arg_daemon_address) )
       {
-        throw std::runtime_error{"Daemon address not set"};
+        LOG_PRINT_L0("Daemon address not set");
+        return 1;
       }
       if(!command_line::has_arg(vm, arg_password) )
       {
-        throw std::runtime_error{"Wallet password not set."};
+        LOG_PRINT_L0("Wallet password not set.");
+        return 1;
       }
 
       boost::filesystem::path relative_path_base = daemonizer::get_relative_path_base(vm);
@@ -54,13 +57,13 @@ namespace tools
         daemon_address = std::string("http://") + daemon_host + ":" + std::to_string(daemon_port);
 
       LOG_PRINT_L0(CRYPTONOTE_NAME << " wallet v" << PROJECT_VERSION_LONG);
-      return t_wallet_daemon{
+      return t_wallet_daemon::create(
         wallet_file
       , wallet_password
       , daemon_address
       , bind_ip
       , bind_port
-      };
+      );
     }
 
     std::string const BASE_NAME = "BitMonero Wallet Daemon";
@@ -99,18 +102,26 @@ namespace tools
     return m_name;
   }
 
-  t_wallet_daemon t_wallet_executor::create_daemon(
+  boost::variant<t_wallet_daemon, int> t_wallet_executor::create_daemon(
       boost::program_options::variables_map const & vm
     )
   {
     return tools::create_daemon(vm);
   }
 
-  bool t_wallet_executor::run_interactive(
+  int t_wallet_executor::run_interactive(
       boost::program_options::variables_map const & vm
     )
   {
     epee::log_space::log_singletone::add_logger(LOGGER_CONSOLE, nullptr, nullptr, LOG_LEVEL_2);
-    return tools::create_daemon(vm).run();
+    auto maybe_daemon = tools::create_daemon(vm);
+    if (maybe_daemon.which() == 1) //error
+    {
+      return boost::get<int>(maybe_daemon);
+    }
+    else
+    {
+      return boost::get<t_wallet_daemon>(maybe_daemon).run();
+    }
   }
 }
