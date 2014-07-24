@@ -20,7 +20,7 @@ namespace tools
     const command_line::arg_descriptor<std::string>   arg_rpc_bind_port    = {"rpc-bind-port", "Starts wallet as rpc server for wallet operations, sets bind port for server", "", true};
     const command_line::arg_descriptor<std::string>   arg_rpc_bind_ip      = {"rpc-bind-ip", "Specify ip to bind rpc server", "127.0.0.1"};
 
-    boost::variant<t_wallet_daemon, int> create_daemon(
+    t_failable<t_wallet_daemon> create_daemon(
         boost::program_options::variables_map const & vm
       )
     {
@@ -102,7 +102,7 @@ namespace tools
     return m_name;
   }
 
-  boost::variant<t_wallet_daemon, int> t_wallet_executor::create_daemon(
+  t_failable<t_wallet_daemon> t_wallet_executor::create_daemon(
       boost::program_options::variables_map const & vm
     )
   {
@@ -115,13 +115,13 @@ namespace tools
   {
     epee::log_space::log_singletone::add_logger(LOGGER_CONSOLE, nullptr, nullptr, LOG_LEVEL_2);
     auto maybe_daemon = tools::create_daemon(vm);
-    if (maybe_daemon.which() == 1) //error
+    if (maybe_daemon.success())
     {
-      return boost::get<int>(maybe_daemon);
+      return maybe_daemon.result().run();
     }
     else
     {
-      return boost::get<t_wallet_daemon>(maybe_daemon).run();
+      return maybe_daemon.error_code();
     }
   }
 }

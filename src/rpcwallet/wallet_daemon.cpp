@@ -6,7 +6,7 @@
 
 namespace tools {
 
-boost::variant<t_wallet_daemon, int> t_wallet_daemon::create(
+t_failable<t_wallet_daemon> t_wallet_daemon::create(
     std::string wallet_file
   , std::string wallet_password
   , std::string daemon_address

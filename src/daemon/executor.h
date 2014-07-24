@@ -1,9 +1,9 @@
 #pragma once
 
 #include "daemon/daemon.h"
+#include "common/failable.h"
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
-#include <boost/variant/variant.hpp>
 #include <string>
 #include <vector>
 
@@ -22,7 +22,7 @@ namespace daemonize
 
     std::string const & name();
 
-    boost::variant<t_daemon, int> create_daemon(
+    tools::t_failable<t_daemon> create_daemon(
         boost::program_options::variables_map const & vm
       );
 

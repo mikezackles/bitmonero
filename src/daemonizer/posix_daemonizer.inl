@@ -43,11 +43,11 @@ namespace daemonizer
       tools::success_msg_writer() << "Forking to background...";
       posix::fork();
       auto maybe_daemon = executor.create_daemon(vm);
-      if (maybe_daemon.which() == 1)
+      if (!maybe_daemon.success())
       {
-        return boost::get<int>(maybe_daemon);
+        return maybe_daemon.error_code();
       }
-      return boost::get<typename T_executor::t_daemon>(maybe_daemon).run();
+      return maybe_daemon.result().run();
     }
     else
     {

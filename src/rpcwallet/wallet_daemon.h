@@ -1,6 +1,7 @@
 #pragma once
 
-#include <boost/variant/variant.hpp>
+#include "common/failable.h"
+
 #include <memory>
 #include <string>
 
@@ -15,7 +16,7 @@ private:
       wallet_rpc_server * p_server
     );
 public:
-  static boost::variant<t_wallet_daemon, int> create(
+  static t_failable<t_wallet_daemon> create(
       std::string wallet_file
     , std::string wallet_password
     , std::string daemon_address

@@ -24,7 +24,7 @@ namespace daemonize
     return NAME;
   }
 
-  boost::variant<t_daemon, int> t_executor::create_daemon(
+  tools::t_failable<t_daemon> t_executor::create_daemon(
       boost::program_options::variables_map const & vm
     )
   {
