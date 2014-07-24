@@ -5,6 +5,7 @@
 
 #include "include_base_utils.h"
 #include "wallet_rpc_server.h"
+#include "wallet/wallet_errors.h"
 #include "common/command_line.h"
 #include "cryptonote_core/cryptonote_format_utils.h"
 #include "cryptonote_core/account.h"
@@ -35,18 +36,10 @@ namespace tools
     , m_port(std::move(port))
     , m_last_refresh(0)
   {
-    try
-    {
-      LOG_PRINT_L0("Loading wallet...");
-      m_wallet.load(wallet_file, wallet_password);
-      m_wallet.init(daemon_address);
-      LOG_PRINT_GREEN("Loaded ok", LOG_LEVEL_0);
-    }
-    catch (std::exception const & e)
-    {
-      LOG_ERROR("Wallet initialize failed: " << e.what());
-      throw;
-    }
+    LOG_PRINT_L0("Loading wallet...");
+    m_wallet.load(wallet_file, wallet_password);
+    m_wallet.init(daemon_address);
+    LOG_PRINT_GREEN("Loaded ok", LOG_LEVEL_0);
     try
     {
       m_wallet.refresh();

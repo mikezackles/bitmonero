@@ -1,6 +1,7 @@
 #include "rpcwallet/wallet_daemon.h"
 
 #include "common/util.h"
+#include "rpcwallet/wallet_return_codes.h"
 #include "rpcwallet/wallet_rpc_server.h"
 
 namespace tools {
@@ -23,8 +24,24 @@ boost::variant<t_wallet_daemon, int> t_wallet_daemon::create(
       , std::move(port)
       }};
   }
+  catch (error::file_not_found const & e)
+  {
+    LOG_ERROR("Wallet initialize failed: " << e.what());
+    return WALLET_RETURN_MISSING_KEYS_FILE;
+  }
+  catch (error::invalid_password const & e)
+  {
+    LOG_ERROR("Wallet initialize failed: " << e.what());
+    return WALLET_RETURN_INVALID_PASSPHRASE;
+  }
+  catch (std::exception const & e)
+  {
+    LOG_ERROR("Wallet initialize failed: " << e.what());
+    throw;
+  }
   catch (...)
   {
+    LOG_ERROR("Wallet initialize failed");
     return 1;
   }
 }
