@@ -475,7 +475,7 @@ bool wallet2::clear()
   return true;
 }
 
-bool wallet2::store_keys(
+bool wallet2::store_keys_to_file(
     const std::string& keys_file_name
   , const std::string& password
   )
@@ -514,7 +514,7 @@ namespace
   }
 }
 
-void wallet2::load_keys(
+void wallet2::load_keys_from_file(
     const std::string& keys_file_name
   , const std::string& password
   )
@@ -558,7 +558,7 @@ crypto::secret_key wallet2::generate(
 
   m_account_public_address = m_account.get_keys().m_account_address;
 
-  bool r = store_keys(m_keys_file, password);
+  bool r = store_keys_to_file(m_keys_file, password);
   THROW_WALLET_EXCEPTION_IF(!r, error::file_save_error, m_keys_file);
 
   r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_account.get_public_address_str());
@@ -638,7 +638,7 @@ void wallet2::load(
   bool exists = boost::filesystem::exists(m_keys_file, e);
   THROW_WALLET_EXCEPTION_IF(e || !exists, error::file_not_found, m_keys_file);
 
-  load_keys(m_keys_file, password);
+  load_keys_from_file(m_keys_file, password);
   LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_account.get_public_address_str());
 
   //keys loaded ok!

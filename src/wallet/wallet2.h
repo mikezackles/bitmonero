@@ -351,12 +351,12 @@ public:
 
 private:
 
-  bool store_keys(
+  bool store_keys_to_file(
       const std::string& keys_file_name
     , const std::string& password
     );
 
-  void load_keys(
+  void load_keys_from_file(
       const std::string& keys_file_name
     , const std::string& password
     );
