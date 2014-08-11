@@ -106,38 +106,7 @@ struct tx_dust_policy
 
 class wallet2
 {
-private:
-  cryptonote::account_base m_account;
-  std::string m_daemon_address;
-  std::string m_wallet_file;
-  std::string m_keys_file;
-  epee::net_utils::http::http_simple_client m_http_client;
-  std::vector<crypto::hash> m_blockchain;
-  std::atomic<uint64_t> m_local_bc_height; //temporary workaround
-  std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
-
-  transfer_container m_transfers;
-  payment_container m_payments;
-  std::unordered_map<crypto::key_image, size_t> m_key_images;
-  cryptonote::account_public_address m_account_public_address;
-  uint64_t m_upper_transaction_size_limit; //TODO: auto-calc this value or request from daemon, now use some fixed value
-
-  std::atomic<bool> m_run;
-
-  i_wallet2_callback* m_callback;
-
-  wallet2(
-      const wallet2&
-    )
-    : m_run(true)
-    , m_callback(0)
-  {};
 public:
-  wallet2()
-    : m_run(true)
-    , m_callback(0)
-  {};
-
   struct transfer_details
   {
     uint64_t m_block_height;
@@ -190,6 +159,38 @@ public:
       FIELD(account_data)
     END_SERIALIZE()
   };
+
+private:
+  cryptonote::account_base m_account;
+  std::string m_daemon_address;
+  std::string m_wallet_file;
+  std::string m_keys_file;
+  epee::net_utils::http::http_simple_client m_http_client;
+  std::vector<crypto::hash> m_blockchain;
+  std::atomic<uint64_t> m_local_bc_height; //temporary workaround
+  std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
+
+  transfer_container m_transfers;
+  payment_container m_payments;
+  std::unordered_map<crypto::key_image, size_t> m_key_images;
+  cryptonote::account_public_address m_account_public_address;
+  uint64_t m_upper_transaction_size_limit; //TODO: auto-calc this value or request from daemon, now use some fixed value
+
+  std::atomic<bool> m_run;
+
+  i_wallet2_callback* m_callback;
+
+  wallet2(
+      const wallet2&
+    )
+    : m_run(true)
+    , m_callback(0)
+  {};
+public:
+  wallet2()
+    : m_run(true)
+    , m_callback(0)
+  {};
 
   crypto::secret_key generate(
       const std::string& wallet
