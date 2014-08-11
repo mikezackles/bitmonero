@@ -43,7 +43,7 @@ if (UNIX AND NOT APPLE)
   find_package(Threads)
 endif()
 
-find_package(LevelDB REQUIRED)
+find_package(LevelDB)
 if (LEVELDB_FOUND)
 	include_directories(SYSTEM ${LEVELDB_INCLUDE})
 endif ()
