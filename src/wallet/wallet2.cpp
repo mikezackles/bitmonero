@@ -270,7 +270,9 @@ void wallet2::process_new_blockchain_entry(
   ++m_local_bc_height;
 
   if (0 != m_callback)
+  {
     m_callback->on_new_block(height, b);
+  }
 }
 
 void wallet2::get_short_chain_history(
@@ -288,7 +290,9 @@ void wallet2::get_short_chain_history(
   {
     ids.push_back(m_blockchain[sz-current_back_offset]);
     if(sz-current_back_offset == 0)
+    {
       genesis_included = true;
+    }
     if(i < 10)
     {
       ++current_back_offset;
@@ -402,7 +406,9 @@ void wallet2::refresh(
     }
   }
   if(last_tx_hash_id != (m_transfers.size() ? get_transaction_hash(m_transfers.back().m_tx) : null_hash))
+  {
     received_money = true;
+  }
 
   LOG_PRINT_L1("Refresh done, blocks received: " << blocks_fetched << ", balance: " << print_money(balance()) << ", unlocked: " << print_money(unlocked_balance()));
 }
@@ -699,7 +705,6 @@ uint64_t wallet2::balance()
       amount += td.amount();
     }
   }
-
 
   BOOST_FOREACH(auto& utx, m_unconfirmed_txs)
   {
@@ -1021,7 +1026,6 @@ void wallet2::transfer(
   ptx.tx = tx;
   ptx.change_dts = change_dts;
   ptx.selected_transfers = selected_transfers;
-
 }
 
 // take a pending tx and actually send it to the daemon
