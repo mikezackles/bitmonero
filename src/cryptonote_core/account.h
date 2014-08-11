@@ -53,7 +53,6 @@ struct account_keys
 class account_base
 {
 private:
-  void set_null();
   account_keys m_keys;
   uint64_t m_creation_timestamp;
 public:
@@ -72,13 +71,6 @@ public:
   uint64_t get_createtime() const
   {
     return m_creation_timestamp;
-  }
-
-  void set_createtime(
-      uint64_t val
-    )
-  {
-    m_creation_timestamp = val;
   }
 
   template <class t_archive>

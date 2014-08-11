@@ -50,13 +50,8 @@ namespace cryptonote
 {
 
 account_base::account_base()
+  : m_keys {}
 {
-  set_null();
-}
-
-void account_base::set_null()
-{
-  m_keys = account_keys();
 }
 
 crypto::secret_key account_base::generate(
