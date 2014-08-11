@@ -33,7 +33,6 @@
 
 #include <boost/utility/value_init.hpp>
 #include "include_base_utils.h"
-using namespace epee;
 
 #include "wallet2.h"
 #include "cryptonote_core/cryptonote_format_utils.h"
@@ -53,6 +52,7 @@ extern "C"
 #include "crypto/crypto-ops.h"
 }
 using namespace cryptonote;
+using namespace epee;
 
 namespace
 {
