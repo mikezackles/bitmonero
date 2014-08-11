@@ -140,7 +140,7 @@ bool cFilesystemUtils::CreateDirTree(const std::string & dir, bool only_below) {
 			#if defined(__unix__) || defined(__posix) || defined(__linux)
 				bool ok = 0==  mkdir(sofar.c_str(), 0700); // ***
 			#elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined (WIN64)
-				bool ok = 0==  _mkdir(sofar.c_str()); // *** http://msdn.microsoft.com/en-us/library/2fkk4dzw.aspx
+				bool ok = 0==  CreateDirectory(sofar.c_str(), nullptr);
 			#else
 				#error "Do not know how to compile this for your platform."
 			#endif
