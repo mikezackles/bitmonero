@@ -96,7 +96,10 @@ bool wallet2::get_seed(
     std::string& electrum_words
   )
 {
-  crypto::ElectrumWords::bytes_to_words(get_account().get_keys().m_spend_secret_key, electrum_words);
+  crypto::ElectrumWords::bytes_to_words(
+      get_account().get_keys().m_spend_secret_key
+    , electrum_words
+    );
 
   crypto::secret_key second;
   keccak(
@@ -586,10 +589,14 @@ bool wallet2::parse_payment_id(
 {
   cryptonote::blobdata payment_id_data;
   if(!epee::string_tools::parse_hexstr_to_binbuff(payment_id_str, payment_id_data))
+  {
     return false;
+  }
 
   if(sizeof(crypto::hash) != payment_id_data.size())
+  {
     return false;
+  }
 
   payment_id = *reinterpret_cast<const crypto::hash*>(payment_id_data.data());
   return true;
@@ -606,12 +613,16 @@ bool wallet2::prepare_file_names(
 bool wallet2::check_connection()
 {
   if(m_http_client.is_connected())
+  {
     return true;
+  }
 
   net_utils::http::url_content u;
   net_utils::parse_url(m_daemon_address, u);
   if(!u.port)
+  {
     u.port = RPC_DEFAULT_PORT;
+  }
   return m_http_client.connect(u.host, std::to_string(u.port), WALLET_RCP_CONNECTION_TIMEOUT);
 }
 
@@ -748,7 +759,8 @@ bool wallet2::is_tx_spendtime_unlocked(
     {
       return false;
     }
-  }else
+  }
+  else
   {
     //interpret as time
     uint64_t current_time = static_cast<uint64_t>(time(NULL));
@@ -955,7 +967,13 @@ void wallet2::commit_tx(
   COMMAND_RPC_SEND_RAW_TX::request req;
   req.tx_as_hex = epee::string_tools::buff_to_hex_nodelimer(tx_to_blob(ptx.tx));
   COMMAND_RPC_SEND_RAW_TX::response daemon_send_resp;
-  bool r = epee::net_utils::invoke_http_json_remote_command2(m_daemon_address + "/sendrawtransaction", req, daemon_send_resp, m_http_client, 200000);
+  bool r = epee::net_utils::invoke_http_json_remote_command2(
+      m_daemon_address + "/sendrawtransaction"
+    , req
+    , daemon_send_resp
+    , m_http_client
+    , 200000
+    );
   THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "sendrawtransaction");
   THROW_WALLET_EXCEPTION_IF(daemon_send_resp.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "sendrawtransaction");
   THROW_WALLET_EXCEPTION_IF(daemon_send_resp.status != CORE_RPC_STATUS_OK, error::tx_rejected, ptx.tx, daemon_send_resp.status);

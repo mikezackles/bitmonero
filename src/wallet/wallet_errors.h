@@ -78,11 +78,13 @@ namespace error
 //
 // * - class with protected ctor
 
-//----------------------------------------------------------------------------------------------------
 template<typename Base>
 struct wallet_error_base : public Base
 {
-  const std::string& location() const { return m_loc; }
+  const std::string& location() const
+  {
+    return m_loc;
+  }
 
   std::string to_string() const
   {
@@ -92,7 +94,10 @@ struct wallet_error_base : public Base
   }
 
 protected:
-  wallet_error_base(std::string&& loc, const std::string& message)
+  wallet_error_base(
+      std::string&& loc
+    , const std::string& message
+    )
     : Base(message)
     , m_loc(loc)
   {
@@ -101,12 +106,13 @@ protected:
 private:
   std::string m_loc;
 };
-//----------------------------------------------------------------------------------------------------
+
 const char* const failed_rpc_request_messages[] = {
   "failed to get blocks",
   "failed to get out indices",
   "failed to get random outs"
 };
+
 enum failed_rpc_request_message_indices
 {
   get_blocks_error_message_index,
@@ -117,13 +123,19 @@ enum failed_rpc_request_message_indices
 template<typename Base, int msg_index>
 struct failed_rpc_request : public Base
 {
-  explicit failed_rpc_request(std::string&& loc, const std::string& status)
+  explicit failed_rpc_request(
+      std::string&& loc
+    , const std::string& status
+    )
     : Base(std::move(loc), failed_rpc_request_messages[msg_index])
     , m_status(status)
   {
   }
 
-  const std::string& status() const { return m_status; }
+  const std::string& status() const
+  {
+    return m_status;
+  }
 
   std::string to_string() const
   {
@@ -135,27 +147,36 @@ struct failed_rpc_request : public Base
 private:
   std::string m_status;
 };
-//----------------------------------------------------------------------------------------------------
+
 typedef wallet_error_base<std::logic_error> wallet_logic_error;
 typedef wallet_error_base<std::runtime_error> wallet_runtime_error;
-//----------------------------------------------------------------------------------------------------
+
 struct wallet_internal_error : public wallet_runtime_error
 {
-  explicit wallet_internal_error(std::string&& loc, const std::string& message)
+  explicit wallet_internal_error(
+      std::string&& loc
+    , const std::string& message
+    )
     : wallet_runtime_error(std::move(loc), message)
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct unexpected_txin_type : public wallet_internal_error
 {
-  explicit unexpected_txin_type(std::string&& loc, const cryptonote::transaction& tx)
+  explicit unexpected_txin_type(
+      std::string&& loc
+    , const cryptonote::transaction& tx
+    )
     : wallet_internal_error(std::move(loc), "one of tx inputs has unexpected type")
     , m_tx(tx)
   {
   }
 
-  const cryptonote::transaction& tx() const { return m_tx; }
+  const cryptonote::transaction& tx() const
+  {
+    return m_tx;
+  }
 
   std::string to_string() const
   {
@@ -168,13 +189,14 @@ struct unexpected_txin_type : public wallet_internal_error
 private:
   cryptonote::transaction m_tx;
 };
-//----------------------------------------------------------------------------------------------------
+
 const char* const file_error_messages[] = {
   "file already exists",
   "file not found",
   "failed to read file",
   "failed to save file"
 };
+
 enum file_error_message_indices
 {
   file_exists_message_index,
@@ -186,7 +208,10 @@ enum file_error_message_indices
 template<int msg_index>
 struct file_error_base : public wallet_logic_error
 {
-  explicit file_error_base(std::string&& loc, const std::string& file)
+  explicit file_error_base(
+      std::string&& loc
+    , const std::string& file
+    )
     : wallet_logic_error(std::move(loc), std::string(file_error_messages[msg_index]) +  " \"" + file + '\"')
     , m_file(file)
   {
@@ -199,47 +224,63 @@ struct file_error_base : public wallet_logic_error
 private:
   std::string m_file;
 };
-//----------------------------------------------------------------------------------------------------
+
 typedef file_error_base<file_exists_message_index> file_exists;
 typedef file_error_base<file_not_found_message_index>  file_not_found;
 typedef file_error_base<file_not_found_message_index>  file_not_found;
 typedef file_error_base<file_read_error_message_index> file_read_error;
 typedef file_error_base<file_save_error_message_index> file_save_error;
-//----------------------------------------------------------------------------------------------------
+
 struct invalid_password : public wallet_logic_error
 {
-  explicit invalid_password(std::string&& loc)
+  explicit invalid_password(
+      std::string&& loc
+    )
     : wallet_logic_error(std::move(loc), "invalid password")
   {
   }
 
-  std::string to_string() const { return wallet_logic_error::to_string(); }
+  std::string to_string() const
+  {
+    return wallet_logic_error::to_string();
+  }
 };
 
-//----------------------------------------------------------------------------------------------------
 struct invalid_pregenerated_random : public wallet_logic_error
 {
-  explicit invalid_pregenerated_random (std::string&& loc)
+  explicit invalid_pregenerated_random (
+      std::string&& loc
+    )
     : wallet_logic_error(std::move(loc), "invalid pregenerated random for wallet creation/recovery")
   {
   }
 
-  std::string to_string() const { return wallet_logic_error::to_string(); }
+  std::string to_string() const
+  {
+    return wallet_logic_error::to_string();
+  }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct refresh_error : public wallet_logic_error
 {
 protected:
-  explicit refresh_error(std::string&& loc, const std::string& message)
+  explicit refresh_error(
+      std::string&& loc
+    , const std::string& message
+    )
     : wallet_logic_error(std::move(loc), message)
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct acc_outs_lookup_error : public refresh_error
 {
-  explicit acc_outs_lookup_error(std::string&& loc, const cryptonote::transaction& tx,
-    const crypto::public_key& tx_pub_key, const cryptonote::account_keys& acc_keys)
+  explicit acc_outs_lookup_error(
+      std::string&& loc
+    , const cryptonote::transaction& tx
+    , const crypto::public_key& tx_pub_key
+    , const cryptonote::account_keys& acc_keys
+    )
     : refresh_error(std::move(loc), "account outs lookup error")
     , m_tx(tx)
     , m_tx_pub_key(tx_pub_key)
@@ -247,9 +288,20 @@ struct acc_outs_lookup_error : public refresh_error
   {
   }
 
-  const cryptonote::transaction& tx() const { return m_tx; }
-  const crypto::public_key& tx_pub_key() const { return m_tx_pub_key; }
-  const cryptonote::account_keys& acc_keys() const { return m_acc_keys; }
+  const cryptonote::transaction& tx() const
+  {
+    return m_tx;
+  }
+
+  const crypto::public_key& tx_pub_key() const
+  {
+    return m_tx_pub_key;
+  }
+
+  const cryptonote::account_keys& acc_keys() const
+  {
+    return m_acc_keys;
+  }
 
   std::string to_string() const
   {
@@ -264,57 +316,82 @@ private:
   const crypto::public_key m_tx_pub_key;
   const cryptonote::account_keys m_acc_keys;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct block_parse_error : public refresh_error
 {
-  explicit block_parse_error(std::string&& loc, const cryptonote::blobdata& block_data)
+  explicit block_parse_error(
+      std::string&& loc
+    , const cryptonote::blobdata& block_data
+    )
     : refresh_error(std::move(loc), "block parse error")
     , m_block_blob(block_data)
   {
   }
 
-  const cryptonote::blobdata& block_blob() const { return m_block_blob; }
+  const cryptonote::blobdata& block_blob() const
+  {
+    return m_block_blob;
+  }
 
-  std::string to_string() const { return refresh_error::to_string(); }
+  std::string to_string() const {
+    return refresh_error::to_string();
+  }
 
 private:
   cryptonote::blobdata m_block_blob;
 };
-//----------------------------------------------------------------------------------------------------
+
 typedef failed_rpc_request<refresh_error, get_blocks_error_message_index> get_blocks_error;
-//----------------------------------------------------------------------------------------------------
+
 typedef failed_rpc_request<refresh_error, get_out_indices_error_message_index> get_out_indices_error;
-//----------------------------------------------------------------------------------------------------
+
 struct tx_parse_error : public refresh_error
 {
-  explicit tx_parse_error(std::string&& loc, const cryptonote::blobdata& tx_blob)
+  explicit tx_parse_error(
+      std::string&& loc
+    , const cryptonote::blobdata& tx_blob
+    )
     : refresh_error(std::move(loc), "transaction parse error")
     , m_tx_blob(tx_blob)
   {
   }
 
-  const cryptonote::blobdata& tx_blob() const { return m_tx_blob; }
+  const cryptonote::blobdata& tx_blob() const
+  {
+    return m_tx_blob;
+  }
 
-  std::string to_string() const { return refresh_error::to_string(); }
+  std::string to_string() const
+  {
+    return refresh_error::to_string();
+  }
 
 private:
   cryptonote::blobdata m_tx_blob;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct transfer_error : public wallet_logic_error
 {
 protected:
-  explicit transfer_error(std::string&& loc, const std::string& message)
+  explicit transfer_error(
+      std::string&& loc
+    , const std::string& message
+    )
     : wallet_logic_error(std::move(loc), message)
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 typedef failed_rpc_request<transfer_error, get_random_outs_error_message_index> get_random_outs_error;
-//----------------------------------------------------------------------------------------------------
+
 struct not_enough_money : public transfer_error
 {
-  explicit not_enough_money(std::string&& loc, uint64_t availbable, uint64_t tx_amount, uint64_t fee)
+  explicit not_enough_money(
+      std::string&& loc
+    , uint64_t availbable
+    , uint64_t tx_amount
+    , uint64_t fee
+    )
     : transfer_error(std::move(loc), "not enough money")
     , m_available(availbable)
     , m_tx_amount(tx_amount)
@@ -322,9 +399,20 @@ struct not_enough_money : public transfer_error
   {
   }
 
-  uint64_t available() const { return m_available; }
-  uint64_t tx_amount() const { return m_tx_amount; }
-  uint64_t fee() const { return m_fee; }
+  uint64_t available() const
+  {
+    return m_available;
+  }
+
+  uint64_t tx_amount() const
+  {
+    return m_tx_amount;
+  }
+
+  uint64_t fee() const
+  {
+    return m_fee;
+  }
 
   std::string to_string() const
   {
@@ -341,20 +429,31 @@ private:
   uint64_t m_tx_amount;
   uint64_t m_fee;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct not_enough_outs_to_mix : public transfer_error
 {
   typedef std::vector<cryptonote::COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount> scanty_outs_t;
 
-  explicit not_enough_outs_to_mix(std::string&& loc, const scanty_outs_t& scanty_outs, size_t mixin_count)
+  explicit not_enough_outs_to_mix(
+      std::string&& loc
+    , const scanty_outs_t& scanty_outs
+    , size_t mixin_count
+    )
     : transfer_error(std::move(loc), "not enough outputs to mix")
     , m_scanty_outs(scanty_outs)
     , m_mixin_count(mixin_count)
   {
   }
 
-  const scanty_outs_t& scanty_outs() const { return m_scanty_outs; }
-  size_t mixin_count() const { return m_mixin_count; }
+  const scanty_outs_t& scanty_outs() const
+  {
+    return m_scanty_outs;
+  }
+
+  size_t mixin_count() const
+  {
+    return m_mixin_count;
+  }
 
   std::string to_string() const
   {
@@ -371,13 +470,18 @@ private:
   scanty_outs_t m_scanty_outs;
   size_t m_mixin_count;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct tx_not_constructed : public transfer_error
 {
   typedef std::vector<cryptonote::tx_source_entry> sources_t;
   typedef std::vector<cryptonote::tx_destination_entry> destinations_t;
 
-  explicit tx_not_constructed(std::string&& loc, const sources_t& sources, const destinations_t& destinations, uint64_t unlock_time)
+  explicit tx_not_constructed(
+      std::string&& loc
+    , const sources_t& sources
+    , const destinations_t& destinations
+    , uint64_t unlock_time
+    )
     : transfer_error(std::move(loc), "transaction was not constructed")
     , m_sources(sources)
     , m_destinations(destinations)
@@ -385,9 +489,20 @@ struct tx_not_constructed : public transfer_error
   {
   }
 
-  const sources_t& sources() const { return m_sources; }
-  const destinations_t& destinations() const { return m_destinations; }
-  uint64_t unlock_time() const { return m_unlock_time; }
+  const sources_t& sources() const
+  {
+    return m_sources;
+  }
+
+  const destinations_t& destinations() const
+  {
+    return m_destinations;
+  }
+
+  uint64_t unlock_time() const
+  {
+    return m_unlock_time;
+  }
 
   std::string to_string() const
   {
@@ -429,10 +544,14 @@ private:
   destinations_t m_destinations;
   uint64_t m_unlock_time;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct tx_rejected : public transfer_error
 {
-  explicit tx_rejected(std::string&& loc, const cryptonote::transaction& tx, const std::string& status)
+  explicit tx_rejected(
+      std::string&& loc
+    , const cryptonote::transaction& tx
+    , const std::string& status
+    )
     : transfer_error(std::move(loc), "transaction was rejected by daemon")
     , m_tx(tx)
     , m_status(status)
@@ -455,18 +574,29 @@ private:
   cryptonote::transaction m_tx;
   std::string m_status;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct tx_sum_overflow : public transfer_error
 {
-  explicit tx_sum_overflow(std::string&& loc, const std::vector<cryptonote::tx_destination_entry>& destinations, uint64_t fee)
+  explicit tx_sum_overflow(
+      std::string&& loc
+    , const std::vector<cryptonote::tx_destination_entry>& destinations
+    , uint64_t fee
+    )
     : transfer_error(std::move(loc), "transaction sum + fee exceeds " + cryptonote::print_money(std::numeric_limits<uint64_t>::max()))
     , m_destinations(destinations)
     , m_fee(fee)
   {
   }
 
-  const std::vector<cryptonote::tx_destination_entry>& destinations() const { return m_destinations; }
-  uint64_t fee() const { return m_fee; }
+  const std::vector<cryptonote::tx_destination_entry>& destinations() const
+  {
+    return m_destinations;
+  }
+
+  uint64_t fee() const
+  {
+    return m_fee;
+  }
 
   std::string to_string() const
   {
@@ -485,18 +615,29 @@ private:
   std::vector<cryptonote::tx_destination_entry> m_destinations;
   uint64_t m_fee;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct tx_too_big : public transfer_error
 {
-  explicit tx_too_big(std::string&& loc, const cryptonote::transaction& tx, uint64_t tx_size_limit)
+  explicit tx_too_big(
+      std::string&& loc
+    , const cryptonote::transaction& tx
+    , uint64_t tx_size_limit
+    )
     : transfer_error(std::move(loc), "transaction is too big")
     , m_tx(tx)
     , m_tx_size_limit(tx_size_limit)
   {
   }
 
-  const cryptonote::transaction& tx() const { return m_tx; }
-  uint64_t tx_size_limit() const { return m_tx_size_limit; }
+  const cryptonote::transaction& tx() const
+  {
+    return m_tx;
+  }
+
+  uint64_t tx_size_limit() const
+  {
+    return m_tx_size_limit;
+  }
 
   std::string to_string() const
   {
@@ -513,18 +654,23 @@ private:
   cryptonote::transaction m_tx;
   uint64_t m_tx_size_limit;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct zero_destination : public transfer_error
 {
-  explicit zero_destination(std::string&& loc)
+  explicit zero_destination(
+      std::string&& loc
+    )
     : transfer_error(std::move(loc), "destination amount is zero")
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct wallet_rpc_error : public wallet_logic_error
 {
-  const std::string& request() const { return m_request; }
+  const std::string& request() const
+  {
+    return m_request;
+  }
 
   std::string to_string() const
   {
@@ -534,7 +680,11 @@ struct wallet_rpc_error : public wallet_logic_error
   }
 
 protected:
-  explicit wallet_rpc_error(std::string&& loc, const std::string& message, const std::string& request)
+  explicit wallet_rpc_error(
+      std::string&& loc
+    , const std::string& message
+    , const std::string& request
+    )
     : wallet_logic_error(std::move(loc), message)
     , m_request(request)
   {
@@ -543,45 +693,67 @@ protected:
 private:
   std::string m_request;
 };
-//----------------------------------------------------------------------------------------------------
+
 struct daemon_busy : public wallet_rpc_error
 {
-  explicit daemon_busy(std::string&& loc, const std::string& request)
+  explicit daemon_busy(
+      std::string&& loc
+    , const std::string& request
+    )
     : wallet_rpc_error(std::move(loc), "daemon is busy", request)
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct no_connection_to_daemon : public wallet_rpc_error
 {
-  explicit no_connection_to_daemon(std::string&& loc, const std::string& request)
+  explicit no_connection_to_daemon(
+      std::string&& loc
+    , const std::string& request
+    )
     : wallet_rpc_error(std::move(loc), "no connection to daemon", request)
   {
   }
 };
-//----------------------------------------------------------------------------------------------------
+
 struct wallet_files_doesnt_correspond : public wallet_logic_error
 {
-  explicit wallet_files_doesnt_correspond(std::string&& loc, const std::string& keys_file, const std::string& wallet_file)
+  explicit wallet_files_doesnt_correspond(
+      std::string&& loc
+    , const std::string& keys_file
+    , const std::string& wallet_file
+    )
     : wallet_logic_error(std::move(loc), "file " + wallet_file + " does not correspond to " + keys_file)
   {
   }
 
-  const std::string& keys_file() const { return m_keys_file; }
-  const std::string& wallet_file() const { return m_wallet_file; }
+  const std::string& keys_file() const
+  {
+    return m_keys_file;
+  }
 
-  std::string to_string() const { return wallet_logic_error::to_string(); }
+  const std::string& wallet_file() const
+  {
+    return m_wallet_file;
+  }
+
+  std::string to_string() const
+  {
+    return wallet_logic_error::to_string();
+  }
 
 private:
   std::string m_keys_file;
   std::string m_wallet_file;
 };
-//----------------------------------------------------------------------------------------------------
 
 #if !defined(_MSC_VER)
 
 template<typename TException, typename... TArgs>
-void throw_wallet_ex(std::string&& loc, const TArgs&... args)
+void throw_wallet_ex(
+    std::string&& loc
+  , const TArgs&... args
+  )
 {
   TException e(std::move(loc), args...);
   LOG_PRINT_L0(e.to_string());

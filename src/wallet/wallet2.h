@@ -643,7 +643,14 @@ void wallet2::transfer(
       req.amounts.push_back(it->amount());
     }
 
-    bool r = epee::net_utils::invoke_http_bin_remote_command2(m_daemon_address + "/getrandom_outs.bin", req, daemon_resp, m_http_client, 200000);
+    bool r = epee::net_utils::invoke_http_bin_remote_command2(
+        m_daemon_address + "/getrandom_outs.bin"
+      , req
+      , daemon_resp
+      , m_http_client
+      , 200000
+      );
+
     THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "getrandom_outs.bin");
     THROW_WALLET_EXCEPTION_IF(daemon_resp.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "getrandom_outs.bin");
     THROW_WALLET_EXCEPTION_IF(daemon_resp.status != CORE_RPC_STATUS_OK, error::get_random_outs_error, daemon_resp.status);
