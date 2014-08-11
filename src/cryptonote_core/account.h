@@ -81,14 +81,6 @@ namespace cryptonote
       m_creation_timestamp = val;
     }
 
-    bool load(
-        const std::string& file_path
-      );
-
-    bool store(
-        const std::string& file_path
-      );
-
     template <class t_archive>
     inline void serialize(
         t_archive &a
