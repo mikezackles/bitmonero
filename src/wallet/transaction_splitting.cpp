@@ -43,7 +43,7 @@ void null_split_strategy(
   splitted_dsts = dsts;
 
   dust = 0;
-  uint64_t change = change_dst.amount;
+  //uint64_t change = change_dst.amount;
   if (0 < dust_threshold)
   {
     for (uint64_t order = 10; order <= 10 * dust_threshold; order *= 10)
@@ -53,7 +53,7 @@ void null_split_strategy(
       if (dust_candidate <= dust_threshold)
       {
         dust = dust_candidate;
-        change = change_candidate;
+        //change = change_candidate;
       }
       else
       {
