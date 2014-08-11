@@ -61,5 +61,6 @@ void null_split_strategy(
       }
     }
   }
+}
 
 }
