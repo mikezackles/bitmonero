@@ -1020,57 +1020,6 @@ void wallet2::transfer(
 
 }
 
-namespace {
-// split_amounts(vector<cryptonote::tx_destination_entry> dsts, size_t num_splits)
-//
-// split amount for each dst in dsts into num_splits parts
-// and make num_splits new vector<crypt...> instances to hold these new amounts
-std::vector<std::vector<cryptonote::tx_destination_entry>> split_amounts(
-    std::vector<cryptonote::tx_destination_entry> dsts
-  , size_t num_splits
-  )
-{
-  std::vector<std::vector<cryptonote::tx_destination_entry>> retVal;
-
-  if (num_splits <= 1)
-  {
-    retVal.push_back(dsts);
-    return retVal;
-  }
-
-  // for each split required
-  for (size_t i=0; i < num_splits; i++)
-  {
-    std::vector<cryptonote::tx_destination_entry> new_dsts;
-
-    // for each destination
-    for (size_t j=0; j < dsts.size(); j++)
-    {
-      cryptonote::tx_destination_entry de;
-      uint64_t amount;
-
-      amount = dsts[j].amount;
-      amount = amount / num_splits;
-
-      // if last split, add remainder
-      if (i + 1 == num_splits)
-      {
-        amount += dsts[j].amount % num_splits;
-      }
-
-      de.addr = dsts[j].addr;
-      de.amount = amount;
-
-      new_dsts.push_back(de);
-    }
-
-    retVal.push_back(new_dsts);
-  }
-
-  return retVal;
-}
-} // anonymous namespace
-
 // take a pending tx and actually send it to the daemon
 void wallet2::commit_tx(
     pending_tx& ptx
@@ -1135,7 +1084,7 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
 
   for(attempt_count = 1; ;attempt_count++)
   {
-    auto split_values = split_amounts(dsts, attempt_count);
+    auto split_values = transaction_splitting::split_amounts(dsts, attempt_count);
 
     // Throw if split_amounts comes back with a vector of size different than it should
     if (split_values.size() != attempt_count)

@@ -32,4 +32,13 @@ void null_split_strategy(
   , uint64_t& dust
   );
 
+// split_amounts(vector<cryptonote::tx_destination_entry> dsts, size_t num_splits)
+//
+// split amount for each dst in dsts into num_splits parts
+// and make num_splits new vector<crypt...> instances to hold these new amounts
+std::vector<std::vector<cryptonote::tx_destination_entry>> split_amounts(
+    std::vector<cryptonote::tx_destination_entry> dsts
+  , size_t num_splits
+  );
+
 } // namespace transaction_splitting
