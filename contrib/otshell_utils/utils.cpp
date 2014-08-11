@@ -22,7 +22,7 @@
 	#include <sys/types.h>
 	#include <sys/stat.h>
 #elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined (WIN64)
-	#include <Windows.h>
+	#include <windows.h>
 #else
 	#error "Do not know how to compile this for your platform."
 #endif
