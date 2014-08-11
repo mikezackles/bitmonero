@@ -129,7 +129,7 @@ bool cFilesystemUtils::CreateDirTree(const std::string & dir, bool only_below) {
 				}
 			}
 		#elif defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined (WIN64)
-		  DWORD dwAttrib = GetFileAttributes(szPath);
+		  DWORD dwAttrib = GetFileAttributes(sofar.c_str());
 		  bool exists = (dwAttrib != INVALID_FILE_ATTRIBUTES && (dwAttrib & FILE_ATTRIBUTE_DIRECTORY));
 		#else
 			#error "Do not know how to compile this for your platform."
