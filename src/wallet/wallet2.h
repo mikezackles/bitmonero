@@ -106,6 +106,26 @@ struct tx_dust_policy
 
 class wallet2
 {
+private:
+  cryptonote::account_base m_account;
+  std::string m_daemon_address;
+  std::string m_wallet_file;
+  std::string m_keys_file;
+  epee::net_utils::http::http_simple_client m_http_client;
+  std::vector<crypto::hash> m_blockchain;
+  std::atomic<uint64_t> m_local_bc_height; //temporary workaround
+  std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
+
+  transfer_container m_transfers;
+  payment_container m_payments;
+  std::unordered_map<crypto::key_image, size_t> m_key_images;
+  cryptonote::account_public_address m_account_public_address;
+  uint64_t m_upper_transaction_size_limit; //TODO: auto-calc this value or request from daemon, now use some fixed value
+
+  std::atomic<bool> m_run;
+
+  i_wallet2_callback* m_callback;
+
   wallet2(
       const wallet2&
     )
@@ -419,25 +439,6 @@ private:
       const cryptonote::transaction& tx
     , uint64_t change_amount
     );
-
-  cryptonote::account_base m_account;
-  std::string m_daemon_address;
-  std::string m_wallet_file;
-  std::string m_keys_file;
-  epee::net_utils::http::http_simple_client m_http_client;
-  std::vector<crypto::hash> m_blockchain;
-  std::atomic<uint64_t> m_local_bc_height; //temporary workaround
-  std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
-
-  transfer_container m_transfers;
-  payment_container m_payments;
-  std::unordered_map<crypto::key_image, size_t> m_key_images;
-  cryptonote::account_public_address m_account_public_address;
-  uint64_t m_upper_transaction_size_limit; //TODO: auto-calc this value or request from daemon, now use some fixed value
-
-  std::atomic<bool> m_run;
-
-  i_wallet2_callback* m_callback;
 };
 }
 BOOST_CLASS_VERSION(tools::wallet2, 7)
@@ -506,14 +507,20 @@ namespace detail
 
     BOOST_FOREACH(auto& de, dsts)
     {
-      cryptonote::decompose_amount_into_digits(de.amount, dust_threshold,
-        [&](uint64_t chunk) { splitted_dsts.push_back(cryptonote::tx_destination_entry(chunk, de.addr)); },
-        [&](uint64_t a_dust) { splitted_dsts.push_back(cryptonote::tx_destination_entry(a_dust, de.addr)); } );
+      cryptonote::decompose_amount_into_digits(
+          de.amount
+        , dust_threshold
+        , [&](uint64_t chunk) { splitted_dsts.push_back(cryptonote::tx_destination_entry(chunk, de.addr)); }
+        , [&](uint64_t a_dust) { splitted_dsts.push_back(cryptonote::tx_destination_entry(a_dust, de.addr)); }
+        );
     }
 
-    cryptonote::decompose_amount_into_digits(change_dst.amount, dust_threshold,
-      [&](uint64_t chunk) { splitted_dsts.push_back(cryptonote::tx_destination_entry(chunk, change_dst.addr)); },
-      [&](uint64_t a_dust) { dust = a_dust; } );
+    cryptonote::decompose_amount_into_digits(
+        change_dst.amount
+      , dust_threshold
+      , [&](uint64_t chunk) { splitted_dsts.push_back(cryptonote::tx_destination_entry(chunk, change_dst.addr)); }
+      , [&](uint64_t a_dust) { dust = a_dust; }
+      );
   }
 
   inline void null_split_strategy(
@@ -557,7 +564,14 @@ namespace detail
     )
   {
     std::string indexes;
-    std::for_each(src.outputs.begin(), src.outputs.end(), [&](const cryptonote::tx_source_entry::output_entry& s_e) { indexes += boost::to_string(s_e.first) + " "; });
+    std::for_each(
+        src.outputs.begin()
+      , src.outputs.end()
+      , [&](const cryptonote::tx_source_entry::output_entry& s_e)
+        {
+          indexes += boost::to_string(s_e.first) + " ";
+        }
+      );
     LOG_PRINT_L0("amount=" << cryptonote::print_money(src.amount) << ", real_output=" <<src.real_output << ", real_output_in_tx_index=" << src.real_output_in_tx_index << ", indexes: " << indexes);
   }
 }

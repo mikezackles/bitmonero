@@ -135,7 +135,9 @@ void wallet2::process_new_transaction(
   {
     LOG_PRINT_L0("Public key wasn't found in the transaction extra. Skipping transaction " << get_transaction_hash(tx));
     if(0 != m_callback)
+    {
       m_callback->on_skip_transaction(height, tx);
+    }
     return;
   }
 
