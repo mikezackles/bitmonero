@@ -99,11 +99,19 @@ bool wallet2::get_seed(
   crypto::ElectrumWords::bytes_to_words(get_account().get_keys().m_spend_secret_key, electrum_words);
 
   crypto::secret_key second;
-  keccak((uint8_t *)&get_account().get_keys().m_spend_secret_key, sizeof(crypto::secret_key), (uint8_t *)&second, sizeof(crypto::secret_key));
+  keccak(
+      (uint8_t *)&get_account().get_keys().m_spend_secret_key
+    , sizeof(crypto::secret_key)
+    , (uint8_t *)&second
+    , sizeof(crypto::secret_key)
+    );
 
   sc_reduce32((uint8_t *)&second);
 
-  return memcmp(second.data,get_account().get_keys().m_view_secret_key.data, sizeof(crypto::secret_key)) == 0;
+  return memcmp(
+      second.data,get_account().get_keys().m_view_secret_key.data
+    , sizeof(crypto::secret_key)
+    ) == 0;
 }
 
 void wallet2::process_new_transaction(
@@ -490,7 +498,10 @@ bool wallet2::store_keys(
 
 namespace
 {
-  bool verify_keys(const crypto::secret_key& sec, const crypto::public_key& expected_pub)
+  bool verify_keys(
+      const crypto::secret_key& sec
+    , const crypto::public_key& expected_pub
+    )
   {
     crypto::public_key pub;
     bool r = crypto::secret_key_to_public_key(sec, pub);
@@ -651,8 +662,12 @@ uint64_t wallet2::unlocked_balance()
 {
   uint64_t amount = 0;
   BOOST_FOREACH(transfer_details& td, m_transfers)
+  {
     if(!td.m_spent && is_transfer_unlocked(td))
+    {
       amount += td.amount();
+    }
+  }
 
   return amount;
 }
@@ -661,12 +676,18 @@ uint64_t wallet2::balance()
 {
   uint64_t amount = 0;
   BOOST_FOREACH(auto& td, m_transfers)
+  {
     if(!td.m_spent)
+    {
       amount += td.amount();
+    }
+  }
 
 
   BOOST_FOREACH(auto& utx, m_unconfirmed_txs)
+  {
     amount+= utx.second.m_change;
+  }
 
   return amount;
 }
@@ -698,10 +719,14 @@ bool wallet2::is_transfer_unlocked(
   ) const
 {
   if(!is_tx_spendtime_unlocked(td.m_tx.unlock_time))
+  {
     return false;
+  }
 
   if(td.m_block_height + DEFAULT_TX_SPENDABLE_AGE > m_blockchain.size())
+  {
     return false;
+  }
 
   return true;
 }
@@ -714,17 +739,25 @@ bool wallet2::is_tx_spendtime_unlocked(
   {
     //interpret as block index
     if(m_blockchain.size()-1 + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_BLOCKS >= unlock_time)
+    {
       return true;
+    }
     else
+    {
       return false;
+    }
   }else
   {
     //interpret as time
     uint64_t current_time = static_cast<uint64_t>(time(NULL));
     if(current_time + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS >= unlock_time)
+    {
       return true;
+    }
     else
+    {
       return false;
+    }
   }
   return false;
 }
@@ -772,9 +805,13 @@ uint64_t wallet2::select_transfers(
     if (!td.m_spent && is_transfer_unlocked(td))
     {
       if (dust < td.amount())
+      {
         unused_transfers_indices.push_back(i);
+      }
       else
+      {
         unused_dust_indices.push_back(i);
+      }
     }
   }
 
@@ -926,7 +963,9 @@ void wallet2::commit_tx(
   LOG_PRINT_L2("transaction " << get_transaction_hash(ptx.tx) << " generated ok and sent to daemon, key_images: [" << ptx.key_images << "]");
 
   BOOST_FOREACH(transfer_container::iterator it, ptx.selected_transfers)
+  {
     it->m_spent = true;
+  }
 
   LOG_PRINT_L0("Transaction successfully sent. <" << get_transaction_hash(ptx.tx) << ">" << ENDL
             << "Commission: " << print_money(ptx.fee+ptx.dust) << " (dust: " << print_money(ptx.dust) << ")" << ENDL
@@ -984,7 +1023,9 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
 
         // mark transfers to be used as "spent"
         BOOST_FOREACH(transfer_container::iterator it, ptx.selected_transfers)
+        {
           it->m_spent = true;
+        }
       }
 
       // if we made it this far, we've selected our transactions.  committing them will mark them spent,
@@ -994,8 +1035,9 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
       {
         // mark transfers to be used as not spent
         BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        {
           it2->m_spent = false;
-
+        }
       }
 
       // if we made it this far, we're OK to actually send the transactions
@@ -1011,8 +1053,9 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
       {
         // mark transfers to be used as not spent
         BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        {
           it2->m_spent = false;
-
+        }
       }
 
       if (attempt_count >= MAX_SPLIT_ATTEMPTS)
@@ -1029,8 +1072,9 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
       {
         // mark transfers to be used as not spent
         BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        {
           it2->m_spent = false;
-
+        }
       }
 
       throw;
