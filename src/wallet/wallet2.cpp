@@ -45,6 +45,7 @@
 #include "serialization/binary_utils.h"
 #include "cryptonote_protocol/blobdatatype.h"
 #include "crypto/electrum-words.h"
+#include "wallet/transaction_splitting.h"
 
 extern "C"
 {
@@ -879,7 +880,7 @@ void wallet2::transfer(
     , unlock_time
     , fee
     , extra
-    , detail::digit_split_strategy
+    , transaction_splitting::digit_split_strategy
     , tx_dust_policy(fee)
     , tx
     , ptx
