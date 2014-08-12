@@ -378,7 +378,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm)
           return false;
       }
     }
-    bool r = new_wallet(m_wallet_file, pwd_container.password(), m_recovery_key, m_restore_deterministic_wallet, m_non_deterministic);
+    bool r = new_wallet(m_wallet_file, pwd_container.password(), m_recovery_key, m_restore_deterministic_wallet, !m_non_deterministic);
     CHECK_AND_ASSERT_MES(r, false, "account creation failed");
   }
   else
@@ -423,7 +423,7 @@ bool simple_wallet::try_connect_to_daemon()
 }
 
 //----------------------------------------------------------------------------------------------------
-bool simple_wallet::new_wallet(const string &wallet_file, const std::string& password, const crypto::secret_key& recovery_key, bool recover, bool two_random)
+bool simple_wallet::new_wallet(const string &wallet_file, const std::string& password, const crypto::secret_key& recovery_key, bool recover, bool deterministic)
 {
   m_wallet_file = wallet_file;
 
@@ -433,7 +433,7 @@ bool simple_wallet::new_wallet(const string &wallet_file, const std::string& pas
   crypto::secret_key recovery_val;
   try
   {
-    recovery_val = m_wallet->generate(wallet_file, password, recovery_key, recover, two_random);
+    recovery_val = m_wallet->generate(wallet_file, password, recovery_key, recover, deterministic);
     message_writer(epee::log_space::console_color_white, true) << "Generated new wallet: " << m_wallet->get_account().get_public_address_str() << std::endl << "view key: " << string_tools::pod_to_hex(m_wallet->get_account().get_keys().m_view_secret_key);
   }
   catch (const std::exception& e)
@@ -461,7 +461,7 @@ bool simple_wallet::new_wallet(const string &wallet_file, const std::string& pas
     "your wallet again. Your wallet key is NOT under risk anyway.\n"
   ;
 
-  if (!two_random)
+  if (deterministic)
   {
     success_msg_writer(true) << "\nPLEASE NOTE: the following 24 words can be used to recover access to your wallet. Please write them down and store them somewhere safe and secure. Please do not store them in your email or on file storage services outside of your immediate control.\n";
     std::cout << electrum_words << std::endl;

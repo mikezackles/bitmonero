@@ -57,7 +57,7 @@ account_base::account_base()
 crypto::secret_key account_base::generate(
     const crypto::secret_key& recovery_key
   , bool recover
-  , bool two_random
+  , bool deterministic
   )
 {
   crypto::secret_key first = generate_keys(
@@ -78,7 +78,7 @@ crypto::secret_key account_base::generate(
       m_keys.m_account_address.m_view_public_key
     , m_keys.m_view_secret_key
     , second
-    , two_random ? false : true
+    , deterministic
     );
 
   struct tm timestamp;

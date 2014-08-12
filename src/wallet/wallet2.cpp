@@ -554,7 +554,7 @@ crypto::secret_key wallet2::generate(
   , const std::string& password
   , const crypto::secret_key& recovery_param
   , bool recover
-  , bool two_random
+  , bool deterministic
   )
 {
   clear();
@@ -564,7 +564,7 @@ crypto::secret_key wallet2::generate(
   THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_wallet_file, ignored_ec), error::file_exists, m_wallet_file);
   THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_keys_file,   ignored_ec), error::file_exists, m_keys_file);
 
-  crypto::secret_key retval = m_account.generate(recovery_param, recover, two_random);
+  crypto::secret_key retval = m_account.generate(recovery_param, recover, deterministic);
 
   m_account_public_address = m_account.get_keys().m_account_address;
 

@@ -61,7 +61,7 @@ public:
   crypto::secret_key generate(
       const crypto::secret_key& recovery_key = crypto::secret_key()
     , bool recover = false
-    , bool two_random = false
+    , bool deterministic = true
     );
 
   const account_keys& get_keys() const;
