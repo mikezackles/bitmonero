@@ -550,15 +550,7 @@ namespace cryptonote
     return pk == out_key.key;
   }
   //---------------------------------------------------------------
-  bool lookup_acc_outs(const account_keys& acc, const transaction& tx, std::vector<size_t>& outs, uint64_t& money_transfered)
-  {
-    crypto::public_key tx_pub_key = get_tx_pub_key_from_extra(tx);
-    if(null_pkey == tx_pub_key)
-      return false;
-    return lookup_acc_outs(acc, tx, tx_pub_key, outs, money_transfered);
-  }
-  //---------------------------------------------------------------
-  bool lookup_acc_outs(const account_keys& acc, const transaction& tx, const crypto::public_key& tx_pub_key, std::vector<size_t>& outs, uint64_t& money_transfered)
+  void lookup_acc_outs(const account_keys& acc, const transaction& tx, const crypto::public_key& tx_pub_key, std::vector<size_t>& outs, uint64_t& money_transfered)
   {
     money_transfered = 0;
     size_t i = 0;
@@ -572,7 +564,6 @@ namespace cryptonote
       }
       i++;
     }
-    return true;
   }
   //---------------------------------------------------------------
   void get_blob_hash(const blobdata& blob, crypto::hash& res)
