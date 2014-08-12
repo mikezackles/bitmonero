@@ -88,8 +88,6 @@ namespace crypto {
     void operator=(const crypto_ops &);
     ~crypto_ops();
 
-    static secret_key generate_keys(public_key &pub, secret_key &sec, const secret_key& recovery_key = secret_key(), bool recover = false);
-    friend secret_key generate_keys(public_key &pub, secret_key &sec, const secret_key& recovery_key, bool recover);
     static bool check_key(const public_key &);
     friend bool check_key(const public_key &);
     static bool secret_key_to_public_key(const secret_key &, public_key &);
@@ -116,6 +114,10 @@ namespace crypto {
       const public_key *const *, std::size_t, const signature *);
   };
 
+  secret_key generate_keys(public_key &pub, secret_key &sec);
+
+  void generate_keys_from_seed(public_key &pub, secret_key &sec, const secret_key& recovery_key);
+
   /* Generate a value filled with random bytes.
    */
   template<typename T>
@@ -124,12 +126,6 @@ namespace crypto {
     std::lock_guard<std::mutex> lock(random_lock);
     generate_random_bytes(sizeof(T), &res);
     return res;
-  }
-
-  /* Generate a new key pair
-   */
-  inline secret_key generate_keys(public_key &pub, secret_key &sec, const secret_key& recovery_key = secret_key(), bool recover = false) {
-    return crypto_ops::generate_keys(pub, sec, recovery_key, recover);
   }
 
   /* Check a public key. Returns true if it is valid, false otherwise.

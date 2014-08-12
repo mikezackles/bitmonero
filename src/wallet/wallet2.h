@@ -166,7 +166,8 @@ public:
   };
 
 private:
-  cryptonote::account_base m_account;
+  cryptonote::core_account_data m_core_data;
+  uint64_t m_account_creation_timestamp; // not accurate for recovered accounts
   std::string m_daemon_address;
   std::string m_wallet_file;
   std::string m_keys_file;
@@ -211,11 +212,6 @@ public:
     );
 
   void store();
-
-  cryptonote::account_base& get_account()
-  {
-    return m_account;
-  }
 
   // upper_transaction_size_limit as defined below is set to
   // approximately 125% of the fixed minimum allowable penalty
@@ -317,6 +313,10 @@ public:
   {
     return m_local_bc_height;
   }
+
+  std::string secret_view_key_as_hex();
+
+  std::string get_account_address_base58();
 
   template <class t_archive>
   inline void serialize(

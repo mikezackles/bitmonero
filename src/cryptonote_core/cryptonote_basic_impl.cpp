@@ -103,9 +103,9 @@ namespace cryptonote {
     return summ;
   }
   //-----------------------------------------------------------------------
-  std::string get_account_address_as_str(const account_public_address& adr)
+  std::string account_public_address::base58() const
   {
-    return tools::base58::encode_addr(CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX, t_serializable_object_to_blob(adr));
+    return tools::base58::encode_addr(CRYPTONOTE_PUBLIC_ADDRESS_BASE58_PREFIX, t_serializable_object_to_blob(*this));
   }
   //-----------------------------------------------------------------------
   bool is_coinbase(const transaction& tx)

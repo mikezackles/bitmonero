@@ -101,7 +101,7 @@ namespace tools
   {
     try
     {
-      res.address = m_wallet.get_account().get_public_address_str();
+      res.address = m_wallet.get_account_address_base58();
     }
     catch (std::exception& e)
     {
@@ -415,7 +415,7 @@ namespace tools
       }
       else if(req.key_type.compare("view_key") == 0)
       {
-          res.key = string_tools::pod_to_hex(m_wallet.get_account().get_keys().m_view_secret_key);
+          res.key = m_wallet.secret_view_key_as_hex();
       }
       else
       {

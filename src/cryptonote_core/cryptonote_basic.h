@@ -312,6 +312,8 @@ namespace cryptonote
     crypto::public_key m_spend_public_key;
     crypto::public_key m_view_public_key;
 
+    std::string base58() const;
+
     BEGIN_SERIALIZE_OBJECT()
       FIELD(m_spend_public_key)
       FIELD(m_view_public_key)
@@ -331,7 +333,7 @@ namespace cryptonote
     static inline keypair generate()
     {
       keypair k;
-      generate_keys(k.pub, k.sec);
+      crypto::generate_keys(k.pub, k.sec);
       return k;
     }
   };

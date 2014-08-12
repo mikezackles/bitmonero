@@ -190,7 +190,7 @@ std::string simple_wallet::get_commands_str()
 
 bool simple_wallet::viewkey(const std::vector<std::string> &args/* = std::vector<std::string>()*/)
 {
-  success_msg_writer() << string_tools::pod_to_hex(m_wallet->get_account().get_keys().m_view_secret_key) << std::endl;
+  success_msg_writer() << m_wallet->get_account_address_base58() << std::endl;
 
   return true;
 }
@@ -434,7 +434,7 @@ bool simple_wallet::new_wallet(const string &wallet_file, const std::string& pas
   try
   {
     recovery_val = m_wallet->generate(wallet_file, password, recovery_key, recover, deterministic);
-    message_writer(epee::log_space::console_color_white, true) << "Generated new wallet: " << m_wallet->get_account().get_public_address_str() << std::endl << "view key: " << string_tools::pod_to_hex(m_wallet->get_account().get_keys().m_view_secret_key);
+    message_writer(epee::log_space::console_color_white, true) << "Generated new wallet: " << m_wallet->get_account_address_base58() << std::endl << "view key: " << m_wallet->secret_view_key_as_hex();
   }
   catch (const std::exception& e)
   {
@@ -480,7 +480,7 @@ bool simple_wallet::open_wallet(const string &wallet_file, const std::string& pa
   try
   {
     m_wallet->load(m_wallet_file, password);
-    message_writer(epee::log_space::console_color_white, true) << "Opened wallet: " << m_wallet->get_account().get_public_address_str();
+    message_writer(epee::log_space::console_color_white, true) << "Opened wallet: " << m_wallet->get_account_address_base58();
   }
   catch (const std::exception& e)
   {
@@ -541,7 +541,7 @@ bool simple_wallet::start_mining(const std::vector<std::string>& args)
     return true;
 
   COMMAND_RPC_START_MINING::request req;
-  req.miner_address = m_wallet->get_account().get_public_address_str();
+  req.miner_address = m_wallet->get_account_address_base58();
 
   bool ok = true;
   size_t max_mining_threads_count = (std::max)(std::thread::hardware_concurrency(), static_cast<unsigned>(2));
@@ -1028,7 +1028,7 @@ bool simple_wallet::transfer(const std::vector<std::string> &args_)
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::run()
 {
-  std::string addr_start = m_wallet->get_account().get_public_address_str().substr(0, 6);
+  std::string addr_start = m_wallet->get_account_address_base58().substr(0, 6);
   return m_cmd_binder.run_handling("[wallet " + addr_start + "]: ", "");
 }
 //----------------------------------------------------------------------------------------------------
@@ -1040,7 +1040,7 @@ void simple_wallet::stop()
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::print_address(const std::vector<std::string> &args/* = std::vector<std::string>()*/)
 {
-  success_msg_writer() << m_wallet->get_account().get_public_address_str();
+  success_msg_writer() << m_wallet->get_account_address_base58();
   return true;
 }
 //----------------------------------------------------------------------------------------------------

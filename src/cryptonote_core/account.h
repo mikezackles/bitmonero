@@ -50,37 +50,18 @@ struct account_keys
   END_KV_SERIALIZE_MAP()
 };
 
-class account_base
+struct core_account_data
 {
-private:
   account_keys m_keys;
   uint64_t m_creation_timestamp;
-public:
-  account_base();
 
-  crypto::secret_key generate(
-      const crypto::secret_key& recovery_key = crypto::secret_key()
-    , bool recover = false
-    , bool deterministic = true
-    );
-
-  const account_keys& get_keys() const;
-
-  std::string get_public_address_str();
-
-  uint64_t get_createtime() const
-  {
-    return m_creation_timestamp;
-  }
-
-  template <class t_archive>
-  inline void serialize(
-      t_archive &a
-    , const unsigned int /*ver*/
+  template <class T_archive>
+  void serialize(
+      T_archive & archive
     )
   {
-    a & m_keys;
-    a & m_creation_timestamp;
+    archive & m_keys;
+    archive & m_creation_timestamp;
   }
 
   BEGIN_KV_SERIALIZE_MAP()
@@ -88,5 +69,19 @@ public:
     KV_SERIALIZE(m_creation_timestamp)
   END_KV_SERIALIZE_MAP()
 };
+
+struct recoverable_account
+{
+  core_account_data m_core_data;
+  crypto::secret_key m_recovery_key;
+};
+
+recoverable_account create_recoverable_account();
+
+core_account_data create_unrecoverable_account();
+
+core_account_data recover_account(
+    crypto::secret_key const & recovery_key
+  );
 
 } // namespace cryptonote

@@ -28,59 +28,96 @@
 //
 // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <fstream>
-
-#include "include_base_utils.h"
-#include "account.h"
-#include "warnings.h"
-#include "crypto/crypto.h"
+#include "cryptonote_core/account.h"
 extern "C"
 {
 #include "crypto/keccak.h"
 }
-#include "cryptonote_core/cryptonote_basic_impl.h"
-#include "cryptonote_core/cryptonote_format_utils.h"
-using namespace std;
-
-DISABLE_VS_WARNINGS(4244 4345)
+#include <ctime>
 
 namespace cryptonote
 {
 
-account_base::account_base()
-  : m_keys {}
+recoverable_account create_recoverable_account()
 {
-}
+  account_keys keys {};
+  crypto::secret_key recovery_key {};
 
-crypto::secret_key account_base::generate(
-    const crypto::secret_key& recovery_key
-  , bool recover
-  , bool deterministic
-  )
-{
-  crypto::secret_key first = generate_keys(
-      m_keys.m_account_address.m_spend_public_key
-    , m_keys.m_spend_secret_key
-    , recovery_key
-    , recover
+  recovery_key = generate_keys(
+      keys.m_account_address.m_spend_public_key
+    , keys.m_spend_secret_key
     );
 
-  // rng for generating second set of keys is hash of first rng.  means only one set of electrum-style words needed for recovery
-  crypto::secret_key second;
+  // rng for generating second set of keys is hash of first rng.  means only
+  // one set of electrum-style words needed for recovery
+  crypto::secret_key view_seed;
   keccak(
-      (uint8_t *)&first, sizeof(crypto::secret_key)
-    , (uint8_t *)&second, sizeof(crypto::secret_key)
+      (uint8_t *)&recovery_key, sizeof(crypto::secret_key)
+    , (uint8_t *)&view_seed, sizeof(crypto::secret_key)
+    );
+
+  generate_keys_from_seed(
+      keys.m_account_address.m_view_public_key
+    , keys.m_view_secret_key
+    , view_seed
+    );
+
+  return recoverable_account {
+    core_account_data {
+        std::move(keys)
+      , static_cast<uint64_t>(time(nullptr))
+    }
+    , std::move(recovery_key)
+  };
+}
+
+core_account_data create_unrecoverable_account()
+{
+  account_keys keys {};
+
+  generate_keys(
+      keys.m_account_address.m_spend_public_key
+    , keys.m_spend_secret_key
     );
 
   generate_keys(
-      m_keys.m_account_address.m_view_public_key
-    , m_keys.m_view_secret_key
-    , second
-    , deterministic
+      keys.m_account_address.m_view_public_key
+    , keys.m_view_secret_key
     );
 
+  return core_account_data {
+      std::move(keys)
+    , static_cast<uint64_t>(time(nullptr))
+  };
+}
+
+core_account_data recover_account(
+    crypto::secret_key const & recovery_key
+  )
+{
+  account_keys keys {};
+
+  generate_keys_from_seed(
+      keys.m_account_address.m_spend_public_key
+    , keys.m_spend_secret_key
+    , recovery_key
+    );
+
+  // rng for generating second set of keys is hash of first rng.  means only
+  // one set of electrum-style words needed for recovery
+  crypto::secret_key view_seed;
+  keccak(
+      (uint8_t *)&recovery_key, sizeof(crypto::secret_key)
+    , (uint8_t *)&view_seed, sizeof(crypto::secret_key)
+    );
+
+  generate_keys_from_seed(
+      keys.m_account_address.m_view_public_key
+    , keys.m_view_secret_key
+    , view_seed
+    );
+
+  // This allows the whole blockchain to be scanned for relevant transactions.
   struct tm timestamp;
   timestamp.tm_year = 2014 - 1900;  // year 2014
   timestamp.tm_mon = 6 - 1;  // month june
@@ -89,26 +126,10 @@ crypto::secret_key account_base::generate(
   timestamp.tm_min = 0;
   timestamp.tm_sec = 0;
 
-  if (recover)
-  {
-    m_creation_timestamp = mktime(&timestamp);
-  }
-  else
-  {
-    m_creation_timestamp = time(NULL);
-  }
-  return first;
-}
-
-const account_keys& account_base::get_keys() const
-{
-  return m_keys;
-}
-
-std::string account_base::get_public_address_str()
-{
-  //TODO: change this code into base 58
-  return get_account_address_as_str(m_keys.m_account_address);
+  return core_account_data {
+      std::move(keys)
+    , static_cast<uint64_t>(mktime(&timestamp))
+  };
 }
 
 }

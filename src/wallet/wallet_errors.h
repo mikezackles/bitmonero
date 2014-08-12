@@ -530,7 +530,7 @@ struct tx_not_constructed : public transfer_error
     for (size_t i = 0; i < m_destinations.size(); ++i)
     {
       const cryptonote::tx_destination_entry& dst = m_destinations[i];
-      ss << "\n  " << i << ": " << cryptonote::get_account_address_as_str(dst.addr) << " " <<
+      ss << "\n  " << i << ": " << dst.addr.base58() << " " <<
         cryptonote::print_money(dst.amount);
     }
 
@@ -606,7 +606,7 @@ struct tx_sum_overflow : public transfer_error
       ", destinations:";
     for (const auto& dst : m_destinations)
     {
-      ss << '\n' << cryptonote::print_money(dst.amount) << " -> " << cryptonote::get_account_address_as_str(dst.addr);
+      ss << '\n' << cryptonote::print_money(dst.amount) << " -> " << dst.addr.base58();
     }
     return ss.str();
   }

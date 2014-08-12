@@ -97,13 +97,13 @@ bool wallet2::get_seed(
   )
 {
   crypto::ElectrumWords::bytes_to_words(
-      get_account().get_keys().m_spend_secret_key
+      m_core_data.m_keys.m_spend_secret_key
     , electrum_words
     );
 
   crypto::secret_key second;
   keccak(
-      (uint8_t *)&get_account().get_keys().m_spend_secret_key
+      (uint8_t *)&m_core_data.m_keys.m_spend_secret_key
     , sizeof(crypto::secret_key)
     , (uint8_t *)&second
     , sizeof(crypto::secret_key)
@@ -112,7 +112,8 @@ bool wallet2::get_seed(
   sc_reduce32((uint8_t *)&second);
 
   return memcmp(
-      second.data,get_account().get_keys().m_view_secret_key.data
+      second.data
+    , m_core_data.m_keys.m_view_secret_key.data
     , sizeof(crypto::secret_key)
     ) == 0;
 }
@@ -145,8 +146,8 @@ void wallet2::process_new_transaction(
   }
 
   crypto::public_key tx_pub_key = pub_key_field.pub_key;
-  bool r = lookup_acc_outs(m_account.get_keys(), tx, tx_pub_key, outs, tx_money_got_in_outs);
-  THROW_WALLET_EXCEPTION_IF(!r, error::acc_outs_lookup_error, tx, tx_pub_key, m_account.get_keys());
+  bool r = lookup_acc_outs(m_core_data.m_keys, tx, tx_pub_key, outs, tx_money_got_in_outs);
+  THROW_WALLET_EXCEPTION_IF(!r, error::acc_outs_lookup_error, tx, tx_pub_key, m_core_data.m_keys);
 
   if(!outs.empty() && tx_money_got_in_outs)
   {
@@ -176,7 +177,7 @@ void wallet2::process_new_transaction(
       td.m_tx = tx;
       td.m_spent = false;
       cryptonote::keypair in_ephemeral;
-      cryptonote::generate_key_image_helper(m_account.get_keys(), tx_pub_key, o, in_ephemeral, td.m_key_image);
+      cryptonote::generate_key_image_helper(m_core_data.m_keys, tx_pub_key, o, in_ephemeral, td.m_key_image);
       THROW_WALLET_EXCEPTION_IF(in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[o].target).key,
         error::wallet_internal_error, "key_image generated ephemeral public key not matched with output_key");
 
@@ -245,7 +246,7 @@ void wallet2::process_new_blockchain_entry(
   //handle transactions from new block
 
   //optimization: seeking only for blocks that are not older then the wallet creation time plus 1 day. 1 day is for possible user incorrect time setup
-  if(b.timestamp + 60*60*24 > m_account.get_createtime())
+  if(b.timestamp + 60*60*24 > m_account_creation_timestamp)
   {
     TIME_MEASURE_START(miner_tx_handle_time);
     process_new_transaction(b.miner_tx, height);
@@ -264,7 +265,7 @@ void wallet2::process_new_blockchain_entry(
   }
   else
   {
-    LOG_PRINT_L2( "Skipped block by timestamp, height: " << height << ", block time " << b.timestamp << ", account time " << m_account.get_createtime());
+    LOG_PRINT_L2( "Skipped block by timestamp, height: " << height << ", block time " << b.timestamp << ", account time " << m_account_creation_timestamp);
   }
   m_blockchain.push_back(bl_id);
   ++m_local_bc_height;
@@ -303,7 +304,9 @@ void wallet2::get_short_chain_history(
     ++i;
   }
   if(!genesis_included)
+  {
     ids.push_back(m_blockchain[0]);
+  }
 }
 
 void wallet2::pull_blocks(
@@ -491,7 +494,7 @@ bool wallet2::store_keys_to_file(
   )
 {
   std::string account_data;
-  bool r = epee::serialization::store_t_to_binary(m_account, account_data);
+  bool r = epee::serialization::store_t_to_binary(m_core_data, account_data);
   CHECK_AND_ASSERT_MES(r, false, "failed to serialize wallet keys");
   wallet2::keys_file_data keys_file_data = boost::value_initialized<wallet2::keys_file_data>();
 
@@ -542,17 +545,16 @@ void wallet2::load_keys_from_file(
   account_data.resize(keys_file_data.account_data.size());
   crypto::chacha8(keys_file_data.account_data.data(), keys_file_data.account_data.size(), key, keys_file_data.iv, &account_data[0]);
 
-  const cryptonote::account_keys& keys = m_account.get_keys();
-  r = epee::serialization::load_t_from_binary(m_account, account_data);
-  r = r && verify_keys(keys.m_view_secret_key,  keys.m_account_address.m_view_public_key);
-  r = r && verify_keys(keys.m_spend_secret_key, keys.m_account_address.m_spend_public_key);
+  r = epee::serialization::load_t_from_binary(m_core_data, account_data);
+  r = r && verify_keys(m_core_data.m_keys.m_view_secret_key,  m_core_data.m_keys.m_account_address.m_view_public_key);
+  r = r && verify_keys(m_core_data.m_keys.m_spend_secret_key, m_core_data.m_keys.m_account_address.m_spend_public_key);
   THROW_WALLET_EXCEPTION_IF(!r, error::invalid_password);
 }
 
 crypto::secret_key wallet2::generate(
     const std::string& wallet_
   , const std::string& password
-  , const crypto::secret_key& recovery_param
+  , const crypto::secret_key& recovery_key
   , bool recover
   , bool deterministic
   )
@@ -564,18 +566,32 @@ crypto::secret_key wallet2::generate(
   THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_wallet_file, ignored_ec), error::file_exists, m_wallet_file);
   THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_keys_file,   ignored_ec), error::file_exists, m_keys_file);
 
-  crypto::secret_key retval = m_account.generate(recovery_param, recover, deterministic);
+  crypto::secret_key new_recovery_key;
+  if (recover)
+  {
+    m_core_data = recover_account(recovery_key);
+  }
+  else if (deterministic)
+  {
+    recoverable_account account = create_recoverable_account();
+    m_core_data = account.m_core_data;
+    new_recovery_key = account.m_recovery_key;
+  }
+  else
+  {
+    m_core_data = create_unrecoverable_account();
+  }
 
-  m_account_public_address = m_account.get_keys().m_account_address;
+  m_account_public_address = m_core_data.m_keys.m_account_address;
 
   bool r = store_keys_to_file(m_keys_file, password);
   THROW_WALLET_EXCEPTION_IF(!r, error::file_save_error, m_keys_file);
 
-  r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_account.get_public_address_str());
+  r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
   if(!r) LOG_PRINT_RED_L0("String with address text not saved");
 
   store();
-  return retval;
+  return new_recovery_key;
 }
 
 void wallet2::wallet_exists(
@@ -649,21 +665,21 @@ void wallet2::load(
   THROW_WALLET_EXCEPTION_IF(e || !exists, error::file_not_found, m_keys_file);
 
   load_keys_from_file(m_keys_file, password);
-  LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_account.get_public_address_str());
+  LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_core_data.m_keys.m_account_address.base58());
 
   //keys loaded ok!
   //try to load wallet file. but even if we failed, it is not big problem
   if(!boost::filesystem::exists(m_wallet_file, e) || e)
   {
     LOG_PRINT_L0("file not found: " << m_wallet_file << ", starting with empty blockchain");
-    m_account_public_address = m_account.get_keys().m_account_address;
+    m_account_public_address = m_core_data.m_keys.m_account_address;
     return;
   }
   bool r = tools::unserialize_obj_from_file(*this, m_wallet_file);
   THROW_WALLET_EXCEPTION_IF(!r, error::file_read_error, m_wallet_file);
   THROW_WALLET_EXCEPTION_IF(
-    m_account_public_address.m_spend_public_key != m_account.get_keys().m_account_address.m_spend_public_key ||
-    m_account_public_address.m_view_public_key  != m_account.get_keys().m_account_address.m_view_public_key,
+    m_account_public_address.m_spend_public_key != m_core_data.m_keys.m_account_address.m_spend_public_key ||
+    m_account_public_address.m_view_public_key  != m_core_data.m_keys.m_account_address.m_view_public_key,
     error::wallet_files_doesnt_correspond, m_keys_file, m_wallet_file);
 
   if(m_blockchain.empty())
@@ -734,6 +750,16 @@ void wallet2::get_payments(
       payments.push_back(x.second);
     }
   });
+}
+
+std::string wallet2::secret_view_key_as_hex()
+{
+  return string_tools::pod_to_hex(m_core_data.m_keys.m_view_secret_key);
+}
+
+std::string wallet2::get_account_address_base58()
+{
+  return m_core_data.m_keys.m_account_address.base58();
 }
 
 bool wallet2::is_transfer_unlocked(
@@ -993,7 +1019,7 @@ void wallet2::transfer(
   cryptonote::tx_destination_entry change_dts = AUTO_VAL_INIT(change_dts);
   if (needed_money < found_money)
   {
-    change_dts.addr = m_account.get_keys().m_account_address;
+    change_dts.addr = m_core_data.m_keys.m_account_address;
     change_dts.amount = found_money - needed_money;
   }
 
@@ -1007,7 +1033,7 @@ void wallet2::transfer(
     splitted_dsts.push_back(cryptonote::tx_destination_entry(dust, dust_policy.addr_for_dust));
   }
 
-  bool r = cryptonote::construct_tx(m_account.get_keys(), sources, splitted_dsts, extra, tx, unlock_time);
+  bool r = cryptonote::construct_tx(m_core_data.m_keys, sources, splitted_dsts, extra, tx, unlock_time);
   THROW_WALLET_EXCEPTION_IF(!r, error::tx_not_constructed, sources, splitted_dsts, unlock_time);
   THROW_WALLET_EXCEPTION_IF(m_upper_transaction_size_limit <= get_object_blobsize(tx), error::tx_too_big, tx, m_upper_transaction_size_limit);
 
