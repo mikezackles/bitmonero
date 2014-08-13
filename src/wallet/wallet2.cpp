@@ -54,29 +54,6 @@ extern "C"
 using namespace cryptonote;
 using namespace epee;
 
-namespace
-{
-
-  void do_prepare_file_names(
-      const std::string& file_path
-    , std::string& keys_file
-    , std::string& wallet_file
-    )
-  {
-    keys_file = file_path;
-    wallet_file = file_path;
-    boost::system::error_code e;
-    if(string_tools::get_extension(keys_file) == "keys")
-    {//provided keys file name
-      wallet_file = string_tools::cut_off_extension(wallet_file);
-    }else
-    {//provided wallet file name
-      keys_file += ".keys";
-    }
-  }
-
-} //namespace
-
 namespace tools
 {
 
@@ -610,7 +587,8 @@ crypto::secret_key wallet2::generate(
   )
 {
   clear();
-  do_prepare_file_names(wallet_, m_keys_file, m_wallet_file);
+  m_keys_file = wallet_ + ".keys";
+  m_wallet_file = wallet_;
 
   boost::system::error_code ignored_ec;
   if (boost::filesystem::exists(m_wallet_file, ignored_ec))
@@ -654,17 +632,14 @@ crypto::secret_key wallet2::generate(
 }
 
 void wallet2::wallet_exists(
-    const std::string& file_path
+    const std::string& wallet_path
   , bool& keys_file_exists
   , bool& wallet_file_exists
   )
 {
-  std::string keys_file, wallet_file;
-  do_prepare_file_names(file_path, keys_file, wallet_file);
-
   boost::system::error_code ignore;
-  keys_file_exists = boost::filesystem::exists(keys_file, ignore);
-  wallet_file_exists = boost::filesystem::exists(wallet_file, ignore);
+  keys_file_exists = boost::filesystem::exists(wallet_path + ".keys", ignore);
+  wallet_file_exists = boost::filesystem::exists(wallet_path, ignore);
 }
 
 bool wallet2::parse_payment_id(
@@ -709,7 +684,8 @@ void wallet2::load(
   )
 {
   clear();
-  do_prepare_file_names(wallet_, m_keys_file, m_wallet_file);
+  m_wallet_file = wallet_;
+  m_keys_file = wallet_ + ".keys";
 
   boost::system::error_code e;
   bool exists = boost::filesystem::exists(m_keys_file, e);
