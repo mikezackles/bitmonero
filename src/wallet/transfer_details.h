@@ -18,6 +18,20 @@ struct transfer_details
   {
     return m_tx.vout[m_internal_output_index].amount;
   }
+
+  template <class Archive>
+  inline void serialize(
+      Archive & a
+    , unsigned int const ver
+    )
+  {
+    a & m_block_height;
+    a & m_global_output_index;
+    a & m_internal_output_index;
+    a & m_tx;
+    a & m_spent;
+    a & m_key_image;
+  }
 };
 
 }

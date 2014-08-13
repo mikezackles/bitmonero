@@ -186,23 +186,29 @@ public:
 
   std::string get_account_address_base58();
 
-  template <class t_archive>
-  inline void serialize(
-      t_archive &a
+  template <class T_archive>
+  void serialize(
+      T_archive & a
     , unsigned int const ver
     )
   {
     if(ver < 5)
+    {
       return;
+    }
     a & m_blockchain;
     a & m_transfers;
     a & m_account_public_address;
     a & m_key_images;
     if(ver < 6)
+    {
       return;
+    }
     a & m_unconfirmed_txs;
     if(ver < 7)
+    {
       return;
+    }
     a & m_payments;
   }
 
@@ -263,55 +269,8 @@ private:
 }
 BOOST_CLASS_VERSION(tools::wallet2, 7)
 
-namespace boost
-{
-namespace serialization
-{
-  template <class Archive>
-  inline void serialize(
-      Archive &a
-    , tools::transfer_details &x
-    , const boost::serialization::version_type ver
-    )
-  {
-    a & x.m_block_height;
-    a & x.m_global_output_index;
-    a & x.m_internal_output_index;
-    a & x.m_tx;
-    a & x.m_spent;
-    a & x.m_key_image;
-  }
-
-  template <class Archive>
-  inline void serialize(
-      Archive &a
-    , tools::unconfirmed_transfer_details &x
-    , const boost::serialization::version_type ver
-    )
-  {
-    a & x.m_change;
-    a & x.m_sent_time;
-    a & x.m_tx;
-  }
-
-  template <class Archive>
-  inline void serialize(
-      Archive& a
-    , tools::payment_details& x
-    , const boost::serialization::version_type ver
-    )
-  {
-    a & x.m_tx_hash;
-    a & x.m_amount;
-    a & x.m_block_height;
-    a & x.m_unlock_time;
-  }
-}
-}
-
 namespace tools
 {
-
 namespace detail
 {
   inline void print_source_entry(
