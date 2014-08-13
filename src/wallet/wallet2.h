@@ -316,10 +316,6 @@ private:
       const std::string& file_path
     );
 
-  void process_unconfirmed(
-      const cryptonote::transaction& tx
-    );
-
   void add_unconfirmed_tx(
       const cryptonote::transaction& tx
     , uint64_t change_amount

@@ -123,42 +123,66 @@ void wallet2::process_new_transaction(
   , uint64_t height
   )
 {
-  process_unconfirmed(tx);
-  std::vector<size_t> outs;
-  uint64_t tx_money_got_in_outs = 0;
-
-  std::vector<tx_extra_field> tx_extra_fields;
-  if(!parse_tx_extra(tx.extra, tx_extra_fields))
+  // Remove this transaction from the list of unconfirmed transactions if it is
+  // there
   {
-    // Extra may only be partially parsed, it's OK if tx_extra_fields contains public key
-    LOG_PRINT_L0("Transaction extra has unsupported format: " << get_transaction_hash(tx));
-  }
-
-  tx_extra_pub_key pub_key_field;
-  if(!find_tx_extra_field_by_type(tx_extra_fields, pub_key_field))
-  {
-    LOG_PRINT_L0("Public key wasn't found in the transaction extra. Skipping transaction " << get_transaction_hash(tx));
-    if(0 != m_callback)
+    auto unconf_it = m_unconfirmed_txs.find(get_transaction_hash(tx));
+    if(unconf_it != m_unconfirmed_txs.end())
     {
-      m_callback->on_skip_transaction(height, tx);
+      m_unconfirmed_txs.erase(unconf_it);
     }
-    return;
   }
 
-  crypto::public_key tx_pub_key = pub_key_field.pub_key;
-  lookup_acc_outs(m_core_data.m_keys, tx, tx_pub_key, outs, tx_money_got_in_outs);
-
-  if(!outs.empty() && tx_money_got_in_outs)
+  // Get the public key for the incoming transaction or skip the transaction if
+  // there isn't one
+  std::vector<tx_extra_field> tx_extra_fields;
+  crypto::public_key incoming_public_key;
   {
-    //good news - got money! take care about it
-    //usually we have only one transfer for user in transaction
-    cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::request req = AUTO_VAL_INIT(req);
-    cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::response res = AUTO_VAL_INIT(res);
-    req.txid = get_transaction_hash(tx);
+    if(!parse_tx_extra(tx.extra, tx_extra_fields))
+    {
+      // Extra may only be partially parsed, but we're only interested in the
+      // public key, so we keep going
+      LOG_PRINT_L0("Transaction extra has unsupported format: " << get_transaction_hash(tx));
+    }
+
+    tx_extra_pub_key public_key_field;
+    if(!find_tx_extra_field_by_type(tx_extra_fields, public_key_field))
+    {
+      LOG_PRINT_L0("Public key wasn't found in the transaction extra. Skipping transaction " << get_transaction_hash(tx));
+      if(nullptr != m_callback)
+      {
+        m_callback->on_skip_transaction(height, tx);
+      }
+      return;
+    }
+    incoming_public_key = public_key_field.pub_key;
+  }
+
+  // Find all the outputs addressed to us and store their indices in
+  // out_indices_addressed_to_us.  money_received gets the total amount of
+  // money received in this transaction.
+  uint64_t money_received = 0;
+  std::vector<size_t> out_indices_addressed_to_us;
+  lookup_acc_outs(
+      m_core_data.m_keys
+    , tx
+    , incoming_public_key
+    , out_indices_addressed_to_us
+    , money_received
+    );
+
+  // Record transactions for everything addressed to us
+  if(!out_indices_addressed_to_us.empty() && money_received)
+  {
+    // Ask the daemon for the global indices associated with this transaction's
+    // outs.
+    cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::request request {};
+    cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::response response {};
+    request.txid = get_transaction_hash(tx);
     if (!net_utils::invoke_http_bin_remote_command2(
           m_daemon_address + "/get_o_indexes.bin"
-        , req
-        , res
+        , request
+        , response
         , m_http_client
         , WALLET_RCP_CONNECTION_TIMEOUT
         )
@@ -166,15 +190,15 @@ void wallet2::process_new_transaction(
     {
       throw error::no_connection_to_daemon { LOCATION_TAG, "get_o_indexes.bin" };
     }
-    else if (res.status == CORE_RPC_STATUS_BUSY)
+    else if (response.status == CORE_RPC_STATUS_BUSY)
     {
       throw error::daemon_busy { LOCATION_TAG, "get_o_indexes.bin" };
     }
-    else if (res.status != CORE_RPC_STATUS_OK)
+    else if (response.status != CORE_RPC_STATUS_OK)
     {
-      throw error::daemon_error { LOCATION_TAG, res.status };
+      throw error::daemon_error { LOCATION_TAG, response.status };
     }
-    else if (res.o_indexes.size() != tx.vout.size())
+    else if (response.o_indexes.size() != tx.vout.size())
     {
       throw error::internal_error {
           LOCATION_TAG
@@ -184,65 +208,76 @@ void wallet2::process_new_transaction(
       };
     }
 
-    for (size_t o : outs)
+    // Filter the global indices returned by the daemon and pick out just the
+    // ones addressed to us.
+    for (size_t local_index : out_indices_addressed_to_us)
     {
-      if (tx.vout.size() <= o)
+      if (tx.vout.size() <= local_index)
       {
         throw error::internal_error {
             LOCATION_TAG
           , "wrong out in transaction: internal index="
-          + std::to_string(o)
+          + std::to_string(local_index)
           + ", total_outs=" + std::to_string(tx.vout.size())
         };
       }
 
-      m_transfers.push_back(boost::value_initialized<transfer_details>());
+      m_transfers.push_back(transfer_details {});
       transfer_details& td = m_transfers.back();
       td.m_block_height = height;
-      td.m_internal_output_index = o;
-      td.m_global_output_index = res.o_indexes[o];
+      td.m_internal_output_index = local_index;
+      td.m_global_output_index = response.o_indexes[local_index];
       td.m_tx = tx;
       td.m_spent = false;
       cryptonote::keypair in_ephemeral;
-      cryptonote::generate_key_image_helper(m_core_data.m_keys, tx_pub_key, o, in_ephemeral, td.m_key_image);
+      cryptonote::generate_key_image_helper(m_core_data.m_keys, incoming_public_key, local_index, in_ephemeral, td.m_key_image);
 
-      if (in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[o].target).key)
+      if (in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[local_index].target).key)
       {
         throw error::internal_error { LOCATION_TAG, "key_image generated ephemeral public key not matched with output_key"};
       }
 
+      // Record ownership of this transfer
       m_key_images[td.m_key_image] = m_transfers.size()-1;
       LOG_PRINT_L0("Received money: " << print_money(td.amount()) << ", with tx: " << get_transaction_hash(tx));
-      if (0 != m_callback)
+      if (nullptr != m_callback)
+      {
         m_callback->on_money_received(height, td.m_tx, td.m_internal_output_index);
+      }
     }
   }
 
-  uint64_t tx_money_spent_in_ins = 0;
-  // check all outputs for spending (compare key images)
+  // Filter all the outputs (vin) for those that match transfers we "own".
+  // Record the total amount we've spent in this transaction in money_spent
+  uint64_t money_spent = 0;
   for (auto& in : tx.vin)
   {
     if(in.type() != typeid(cryptonote::txin_to_key))
+    {
       continue;
+    }
     auto it = m_key_images.find(boost::get<cryptonote::txin_to_key>(in).k_image);
     if(it != m_key_images.end())
     {
       LOG_PRINT_L0("Spent money: " << print_money(boost::get<cryptonote::txin_to_key>(in).amount) << ", with tx: " << get_transaction_hash(tx));
-      tx_money_spent_in_ins += boost::get<cryptonote::txin_to_key>(in).amount;
+      money_spent += boost::get<cryptonote::txin_to_key>(in).amount;
       transfer_details& td = m_transfers[it->second];
       td.m_spent = true;
-      if (0 != m_callback)
+      if (nullptr != m_callback)
+      {
         m_callback->on_money_spent(height, td.m_tx, td.m_internal_output_index, tx);
+      }
     }
   }
 
+  // Record a record of the payment if the transaction contains a payment_id
   tx_extra_nonce extra_nonce;
   if (find_tx_extra_field_by_type(tx_extra_fields, extra_nonce))
   {
     crypto::hash payment_id;
     if(get_payment_id_from_tx_extra_nonce(extra_nonce.nonce, payment_id))
     {
-      uint64_t received = (tx_money_spent_in_ins < tx_money_got_in_outs) ? tx_money_got_in_outs - tx_money_spent_in_ins : 0;
+      uint64_t received = (money_spent < money_received) ? money_received - money_spent : 0;
       if (0 < received && null_hash != payment_id)
       {
         payment_details payment;
@@ -255,15 +290,6 @@ void wallet2::process_new_transaction(
       }
     }
   }
-}
-
-void wallet2::process_unconfirmed(
-    const cryptonote::transaction& tx
-  )
-{
-  auto unconf_it = m_unconfirmed_txs.find(get_transaction_hash(tx));
-  if(unconf_it != m_unconfirmed_txs.end())
-    m_unconfirmed_txs.erase(unconf_it);
 }
 
 void wallet2::process_new_blockchain_entry(
