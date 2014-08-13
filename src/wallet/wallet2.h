@@ -212,6 +212,7 @@ public:
     a & m_payments;
   }
 
+public:
   static void wallet_exists(
       std::string const & file_path
     , bool& keys_file_exists

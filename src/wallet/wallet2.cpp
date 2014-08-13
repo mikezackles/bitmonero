@@ -795,12 +795,17 @@ void wallet2::get_payments(
   ) const
 {
   auto range = m_payments.equal_range(payment_id);
-  std::for_each(range.first, range.second, [&payments, &min_height](const payment_container::value_type& x) {
-    if (min_height < x.second.m_block_height)
-    {
-      payments.push_back(x.second);
-    }
-  });
+  std::for_each(
+      range.first
+    , range.second
+    , [&payments, &min_height](payment_container::value_type const & x)
+      {
+        if (min_height < x.second.m_block_height)
+        {
+          payments.push_back(x.second);
+        }
+      }
+    );
 }
 
 std::string wallet2::secret_view_key_as_hex()
@@ -1081,7 +1086,7 @@ void wallet2::transfer(
     src.real_out_tx_key = get_tx_pub_key_from_extra(td.m_tx);
     src.real_output = interted_it - src.outputs.begin();
     src.real_output_in_tx_index = td.m_internal_output_index;
-    detail::print_source_entry(src);
+    print_source_entry(src);
     ++i;
   }
 
