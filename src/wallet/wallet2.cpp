@@ -375,8 +375,8 @@ void wallet2::pull_blocks(
   )
 {
   blocks_added = 0;
-  cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::request req = AUTO_VAL_INIT(req);
-  cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::response res = AUTO_VAL_INIT(res);
+  cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::request req {};
+  cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::response res {};
   get_short_chain_history(req.block_ids);
   req.start_height = start_height;
   if (!net_utils::invoke_http_bin_remote_command2(
@@ -1042,10 +1042,10 @@ void wallet2::transfer(
   typedef COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::out_entry out_entry;
   typedef cryptonote::tx_source_entry::output_entry tx_output_entry;
 
-  COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::response daemon_resp = AUTO_VAL_INIT(daemon_resp);
+  COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::response daemon_resp {};
   if(fake_outputs_count)
   {
-    COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::request req = AUTO_VAL_INIT(req);
+    COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::request req {};
     req.outs_count = fake_outputs_count + 1;// add one to make possible (if need) to skip real output key
     for (transfer_container::iterator it : selected_transfers)
     {
@@ -1145,7 +1145,7 @@ void wallet2::transfer(
     ++i;
   }
 
-  cryptonote::tx_destination_entry change_dts = AUTO_VAL_INIT(change_dts);
+  cryptonote::tx_destination_entry change_dts {};
   if (needed_money < found_money)
   {
     change_dts.addr = m_core_data.m_keys.m_account_address;
