@@ -213,7 +213,7 @@ public:
 
   void get_payments(
       const crypto::hash& payment_id
-    , std::list<payment_details>& payments
+    , std::vector<payment_details>& payments
     , uint64_t min_height = 0
     ) const;
 
@@ -303,7 +303,7 @@ private:
       uint64_t needed_money
     , bool add_dust
     , uint64_t dust
-    , std::list<transfer_container::iterator>& selected_transfers
+    , std::vector<transfer_container::iterator>& selected_transfers
     );
 
   bool prepare_file_names(

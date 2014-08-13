@@ -851,7 +851,7 @@ void wallet2::get_transfers(
 
 void wallet2::get_payments(
     const crypto::hash& payment_id
-  , std::list<payment_details>& payments
+  , std::vector<payment_details>& payments
   , uint64_t min_height
   ) const
 {
@@ -938,7 +938,7 @@ uint64_t wallet2::select_transfers(
     uint64_t needed_money
   , bool add_dust
   , uint64_t dust
-  , std::list<transfer_container::iterator>& selected_transfers
+  , std::vector<transfer_container::iterator>& selected_transfers
   )
 {
   std::vector<size_t> unused_transfers_indices;
@@ -1034,7 +1034,7 @@ void wallet2::transfer(
 
   // randomly select inputs for transaction
   // throw if requested send amount is greater than amount available to send
-  std::list<transfer_container::iterator> selected_transfers;
+  std::vector<transfer_container::iterator> selected_transfers;
   uint64_t found_money = select_transfers(
       needed_money
     , 0 == fake_outputs_count

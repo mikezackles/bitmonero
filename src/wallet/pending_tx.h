@@ -10,7 +10,7 @@ struct pending_tx
   cryptonote::transaction tx;
   uint64_t dust, fee;
   cryptonote::tx_destination_entry change_dts;
-  std::list<transfer_container::iterator> selected_transfers;
+  std::vector<transfer_container::iterator> selected_transfers;
   std::string key_images;
 };
 

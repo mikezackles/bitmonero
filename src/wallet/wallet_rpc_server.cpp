@@ -291,7 +291,7 @@ namespace tools
     payment_id = *reinterpret_cast<const crypto::hash*>(payment_id_blob.data());
 
     res.payments.clear();
-    std::list<payment_details> payment_list;
+    std::vector<payment_details> payment_list;
     m_wallet.get_payments(payment_id, payment_list);
     for (auto & payment : payment_list)
     {
@@ -334,7 +334,7 @@ namespace tools
 
       payment_id = *reinterpret_cast<const crypto::hash*>(payment_id_blob.data());
 
-      std::list<payment_details> payment_list;
+      std::vector<payment_details> payment_list;
       m_wallet.get_payments(payment_id, payment_list, req.min_block_height);
 
       for (auto & payment : payment_list)
