@@ -88,9 +88,7 @@ private:
 
   i_wallet2_callback* m_callback;
 
-  wallet2(
-      const wallet2&
-    )
+  wallet2(wallet2 const &)
     : m_run(true)
     , m_callback(0)
   {};
@@ -101,16 +99,16 @@ public:
   {};
 
   crypto::secret_key generate(
-      const std::string& wallet
-    , const std::string& password
-    , const crypto::secret_key& recovery_param = crypto::secret_key()
+      std::string const & wallet
+    , std::string const & password
+    , crypto::secret_key const & recovery_param = crypto::secret_key()
     , bool recover = false
     , bool two_random = false
     );
 
   void load(
-      const std::string& wallet
-    , const std::string& password
+      std::string const & wallet
+    , std::string const & password
     );
 
   void store();
@@ -121,7 +119,7 @@ public:
   // into account the current median block size rather than
   // the minimum block size.
   void init(
-      const std::string& daemon_address = "http://localhost:8080"
+      std::string const & daemon_address = "http://localhost:8080"
     , uint64_t upper_transaction_size_limit = ((CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 125) / 100) - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE
     );
 
@@ -137,16 +135,12 @@ public:
     return m_callback;
   }
 
-  void callback(
-      i_wallet2_callback* callback
-    )
+  void callback(i_wallet2_callback* callback)
   {
     m_callback = callback;
   }
 
-  bool get_seed(
-      std::string& electrum_words
-    );
+  bool get_seed(std::string& electrum_words);
 
   size_t refresh(uint64_t start_height);
 
@@ -155,42 +149,36 @@ public:
   uint64_t unlocked_balance();
 
   void transfer(
-      const std::vector<cryptonote::tx_destination_entry>& dsts
+      std::vector<cryptonote::tx_destination_entry> const & dsts
     , size_t fake_outputs_count
     , uint64_t unlock_time
     , uint64_t fee
-    , const std::vector<uint8_t>& extra
+    , std::vector<uint8_t> const & extra
     , transaction_splitting::strategy destination_split_strategy
-    , const tx_dust_policy& dust_policy
+    , tx_dust_policy const & dust_policy
     , cryptonote::transaction& tx
     , pending_tx& ptx
     );
 
-  void commit_tx(
-      pending_tx& ptx_vector
-    );
+  void commit_tx(pending_tx& ptx_vector);
 
-  void commit_tx(
-      std::vector<pending_tx>& ptx_vector
-    );
+  void commit_tx(std::vector<pending_tx>& ptx_vector);
 
   std::vector<pending_tx> create_transactions(
       std::vector<cryptonote::tx_destination_entry> dsts
-    , const size_t fake_outs_count
-    , const uint64_t unlock_time
-    , const uint64_t fee
-    , const std::vector<uint8_t> extra
+    , size_t const fake_outs_count
+    , uint64_t const unlock_time
+    , uint64_t const fee
+    , std::vector<uint8_t> const extra
     );
 
   bool check_connection();
 
-  void get_transfers(
-      transfer_container& incoming_transfers
-    ) const;
+  void get_transfers(transfer_container & incoming_transfers) const;
 
   void get_payments(
-      const crypto::hash& payment_id
-    , std::vector<payment_details>& payments
+      crypto::hash const & payment_id
+    , std::vector<payment_details> & payments
     , uint64_t min_height = 0
     ) const;
 
@@ -201,7 +189,7 @@ public:
   template <class t_archive>
   inline void serialize(
       t_archive &a
-    , const unsigned int ver
+    , unsigned int const ver
     )
   {
     if(ver < 5)
@@ -219,7 +207,7 @@ public:
   }
 
   static void wallet_exists(
-      const std::string& file_path
+      std::string const & file_path
     , bool& keys_file_exists
     , bool& wallet_file_exists
     );
@@ -232,42 +220,34 @@ public:
 private:
 
   bool store_keys_to_file(
-      const std::string& keys_file_name
-    , const std::string& password
+      std::string const & keys_file_name
+    , std::string const & password
     );
 
   void load_keys_from_file(
-      const std::string& keys_file_name
-    , const std::string& password
+      std::string const & keys_file_name
+    , std::string const & password
     );
 
   void process_new_transaction(
-      const cryptonote::transaction& tx
+      cryptonote::transaction const & tx
     , uint64_t height
     );
 
   void process_new_blockchain_entry(
-      const cryptonote::block& b
+      cryptonote::block const & b
     , cryptonote::block_complete_entry& bche
     , crypto::hash& bl_id
     , uint64_t height
     );
 
-  void detach_blockchain(
-      uint64_t height
-    );
+  void detach_blockchain(uint64_t height);
 
-  void get_short_chain_history(
-      std::list<crypto::hash>& ids
-    );
+  void get_short_chain_history(std::list<crypto::hash>& ids);
 
-  bool is_tx_spendtime_unlocked(
-      uint64_t unlock_time
-    ) const;
+  bool is_tx_spendtime_unlocked(uint64_t unlock_time) const;
 
-  bool is_transfer_unlocked(
-      const transfer_details& td
-    ) const;
+  bool is_transfer_unlocked(transfer_details const & td) const;
 
   bool clear();
 

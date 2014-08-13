@@ -64,10 +64,10 @@ namespace
 }
 
 // for now, limit to 30 attempts.  TODO: discuss a good number to limit to.
-const size_t MAX_SPLIT_ATTEMPTS = 30;
+size_t const MAX_SPLIT_ATTEMPTS = 30;
 
 void wallet2::init(
-    const std::string& daemon_address
+    std::string const & daemon_address
   , uint64_t upper_transaction_size_limit
   )
 {
@@ -75,9 +75,7 @@ void wallet2::init(
   m_daemon_address = daemon_address;
 }
 
-bool wallet2::get_seed(
-    std::string& electrum_words
-  )
+bool wallet2::get_seed(std::string & electrum_words)
 {
   crypto::ElectrumWords::bytes_to_words(
       m_core_data.m_keys.m_spend_secret_key
@@ -102,7 +100,7 @@ bool wallet2::get_seed(
 }
 
 void wallet2::process_new_transaction(
-    const cryptonote::transaction& tx
+    cryptonote::transaction const & tx
   , uint64_t height
   )
 {
@@ -276,9 +274,9 @@ void wallet2::process_new_transaction(
 }
 
 void wallet2::process_new_blockchain_entry(
-    const cryptonote::block& b
-  , cryptonote::block_complete_entry& bche
-  , crypto::hash& bl_id
+    cryptonote::block const & b
+  , cryptonote::block_complete_entry & bche
+  , crypto::hash & bl_id
   , uint64_t height
   )
 {
@@ -317,7 +315,7 @@ void wallet2::process_new_blockchain_entry(
 }
 
 void wallet2::get_short_chain_history(
-    std::list<crypto::hash>& ids
+    std::list<crypto::hash> & ids
   )
 {
   size_t i = 0;
@@ -352,9 +350,7 @@ void wallet2::get_short_chain_history(
   }
 }
 
-size_t wallet2::pull_blocks(
-    uint64_t start_height
-  )
+size_t wallet2::pull_blocks(uint64_t start_height)
 {
   size_t num_blocks_added = 0;
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::request req {};
@@ -382,7 +378,7 @@ size_t wallet2::pull_blocks(
   }
 
   size_t current_index = res.start_height;
-  for (auto& bl_entry : res.blocks)
+  for (auto & bl_entry : res.blocks)
   {
     cryptonote::block bl;
     if (!cryptonote::parse_and_validate_block_from_blob(bl_entry.block, bl))
@@ -458,9 +454,7 @@ size_t wallet2::refresh(uint64_t start_height)
   return blocks_fetched;
 }
 
-void wallet2::detach_blockchain(
-    uint64_t height
-  )
+void wallet2::detach_blockchain(uint64_t height)
 {
   LOG_PRINT_L0("Detaching blockchain on height " << height);
   size_t transfers_detached = 0;
@@ -514,8 +508,8 @@ bool wallet2::clear()
 }
 
 bool wallet2::store_keys_to_file(
-    const std::string& keys_file_name
-  , const std::string& password
+    std::string const & keys_file_name
+  , std::string const & password
   )
 {
   std::string account_data;
@@ -542,8 +536,8 @@ bool wallet2::store_keys_to_file(
 namespace
 {
   bool verify_keys(
-      const crypto::secret_key& sec
-    , const crypto::public_key& expected_pub
+      crypto::secret_key const & sec
+    , crypto::public_key const & expected_pub
     )
   {
     crypto::public_key pub;
@@ -553,8 +547,8 @@ namespace
 }
 
 void wallet2::load_keys_from_file(
-    const std::string& keys_file_name
-  , const std::string& password
+    std::string const & keys_file_name
+  , std::string const & password
   )
 {
   keys_file_data file_data;
@@ -585,9 +579,9 @@ void wallet2::load_keys_from_file(
 }
 
 crypto::secret_key wallet2::generate(
-    const std::string& wallet_
-  , const std::string& password
-  , const crypto::secret_key& recovery_key
+    std::string const & wallet_
+  , std::string const & password
+  , crypto::secret_key const & recovery_key
   , bool recover
   , bool deterministic
   )
@@ -638,7 +632,7 @@ crypto::secret_key wallet2::generate(
 }
 
 void wallet2::wallet_exists(
-    const std::string& wallet_path
+    std::string const & wallet_path
   , bool& keys_file_exists
   , bool& wallet_file_exists
   )
@@ -685,8 +679,8 @@ bool wallet2::check_connection()
 }
 
 void wallet2::load(
-    const std::string& wallet_
-  , const std::string& password
+    std::string const & wallet_
+  , std::string const & password
   )
 {
   clear();
@@ -774,15 +768,15 @@ uint64_t wallet2::balance()
 }
 
 void wallet2::get_transfers(
-    transfer_container& incoming_transfers
+    transfer_container & incoming_transfers
   ) const
 {
   incoming_transfers = m_transfers;
 }
 
 void wallet2::get_payments(
-    const crypto::hash& payment_id
-  , std::vector<payment_details>& payments
+    const crypto::hash & payment_id
+  , std::vector<payment_details> & payments
   , uint64_t min_height
   ) const
 {
@@ -806,7 +800,7 @@ std::string wallet2::get_account_address_base58()
 }
 
 bool wallet2::is_transfer_unlocked(
-    const transfer_details& td
+    transfer_details const & td
   ) const
 {
   if(!is_tx_spendtime_unlocked(td.m_tx.unlock_time))
@@ -917,15 +911,15 @@ uint64_t wallet2::select_transfers(
 }
 
 void wallet2::transfer(
-    const std::vector<cryptonote::tx_destination_entry>& dsts
+    const std::vector<cryptonote::tx_destination_entry> & dsts
   , size_t fake_outputs_count
   , uint64_t unlock_time
   , uint64_t fee
-  , const std::vector<uint8_t>& extra
+  , const std::vector<uint8_t> & extra
   , transaction_splitting::strategy destination_split_strategy
-  , const tx_dust_policy& dust_policy
-  , cryptonote::transaction& tx
-  , pending_tx &ptx
+  , const tx_dust_policy & dust_policy
+  , cryptonote::transaction & tx
+  , pending_tx & ptx
   )
 {
   using namespace cryptonote;
@@ -1132,7 +1126,7 @@ void wallet2::transfer(
 
 // take a pending tx and actually send it to the daemon
 void wallet2::commit_tx(
-    pending_tx& ptx
+    pending_tx & ptx
   )
 {
   using namespace cryptonote;
@@ -1179,7 +1173,7 @@ void wallet2::commit_tx(
 }
 
 void wallet2::commit_tx(
-    std::vector<pending_tx>& ptx_vector
+    std::vector<pending_tx> & ptx_vector
   )
 {
   for (auto & ptx : ptx_vector)
@@ -1197,10 +1191,10 @@ void wallet2::commit_tx(
 // calling code
 std::vector<pending_tx> wallet2::create_transactions(
     std::vector<cryptonote::tx_destination_entry> dsts
-  , const size_t fake_outs_count
-  , const uint64_t unlock_time
-  , const uint64_t fee
-  , const std::vector<uint8_t> extra
+  , size_t const fake_outs_count
+  , uint64_t const unlock_time
+  , uint64_t const fee
+  , std::vector<uint8_t> const extra
   )
 {
 
@@ -1262,7 +1256,7 @@ std::vector<pending_tx> wallet2::create_transactions(
 
     }
     // only catch this here, other exceptions need to pass through to the calling function
-    catch (const tools::error::tx_too_big& e)
+    catch (tools::error::tx_too_big const & e)
     {
 
       // unmark pending tx transfers as spent
