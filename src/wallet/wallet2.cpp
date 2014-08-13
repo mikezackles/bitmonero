@@ -619,7 +619,7 @@ crypto::secret_key wallet2::generate(
   )
 {
   clear();
-  prepare_file_names(wallet_);
+  do_prepare_file_names(wallet_, m_keys_file, m_wallet_file);
 
   boost::system::error_code ignored_ec;
   if (boost::filesystem::exists(m_wallet_file, ignored_ec))
@@ -696,14 +696,6 @@ bool wallet2::parse_payment_id(
   return true;
 }
 
-bool wallet2::prepare_file_names(
-    const std::string& file_path
-  )
-{
-  do_prepare_file_names(file_path, m_keys_file, m_wallet_file);
-  return true;
-}
-
 bool wallet2::check_connection()
 {
   if(m_http_client.is_connected())
@@ -726,7 +718,7 @@ void wallet2::load(
   )
 {
   clear();
-  prepare_file_names(wallet_);
+  do_prepare_file_names(wallet_, m_keys_file, m_wallet_file);
 
   boost::system::error_code e;
   bool exists = boost::filesystem::exists(m_keys_file, e);
@@ -949,17 +941,6 @@ uint64_t wallet2::select_transfers(
   }
 
   return found_money;
-}
-
-void wallet2::add_unconfirmed_tx(
-    const cryptonote::transaction& tx
-  , uint64_t change_amount
-  )
-{
-  unconfirmed_transfer_details& utd = m_unconfirmed_txs[cryptonote::get_transaction_hash(tx)];
-  utd.m_change = change_amount;
-  utd.m_sent_time = time(NULL);
-  utd.m_tx = tx;
 }
 
 void wallet2::transfer(
@@ -1205,7 +1186,10 @@ void wallet2::commit_tx(
     throw error::tx_rejected { LOCATION_TAG, daemon_send_resp.status };
   }
 
-  add_unconfirmed_tx(ptx.tx, ptx.change_dts.amount);
+  unconfirmed_transfer_details& utd = m_unconfirmed_txs[cryptonote::get_transaction_hash(ptx.tx)];
+  utd.m_change = ptx.change_dts.amount;
+  utd.m_sent_time = time(NULL);
+  utd.m_tx = ptx.tx;
 
   LOG_PRINT_L2("transaction " << get_transaction_hash(ptx.tx) << " generated ok and sent to daemon, key_images: [" << ptx.key_images << "]");
 

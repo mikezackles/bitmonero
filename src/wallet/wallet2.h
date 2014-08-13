@@ -302,15 +302,6 @@ private:
     , uint64_t dust
     , std::vector<transfer_container::iterator>& selected_transfers
     );
-
-  bool prepare_file_names(
-      const std::string& file_path
-    );
-
-  void add_unconfirmed_tx(
-      const cryptonote::transaction& tx
-    , uint64_t change_amount
-    );
 };
 }
 BOOST_CLASS_VERSION(tools::wallet2, 7)
