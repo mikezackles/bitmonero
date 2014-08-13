@@ -171,7 +171,7 @@ void wallet2::process_new_transaction(
     , money_received
     );
 
-  // Record transactions for everything addressed to us
+  // Record transfers for everything addressed to us
   if(!out_indices_addressed_to_us.empty() && money_received)
   {
     // Ask the daemon for the global indices associated with this transaction's
@@ -473,7 +473,9 @@ void wallet2::refresh(
       pull_blocks(start_height, added_blocks);
       blocks_fetched += added_blocks;
       if(!added_blocks)
+      {
         break;
+      }
     }
     catch (const std::exception&)
     {
@@ -1033,7 +1035,12 @@ void wallet2::transfer(
   // randomly select inputs for transaction
   // throw if requested send amount is greater than amount available to send
   std::list<transfer_container::iterator> selected_transfers;
-  uint64_t found_money = select_transfers(needed_money, 0 == fake_outputs_count, dust_policy.dust_threshold, selected_transfers);
+  uint64_t found_money = select_transfers(
+      needed_money
+    , 0 == fake_outputs_count
+    , dust_policy.dust_threshold
+    , selected_transfers
+    );
   if (found_money < needed_money)
   {
     throw error::not_enough_money { LOCATION_TAG, "found: " + std::to_string(found_money) + ", need:" + std::to_string(needed_money) };
@@ -1114,7 +1121,12 @@ void wallet2::transfer(
     //paste mixin transaction
     if(daemon_resp.outs.size())
     {
-      daemon_resp.outs[i].outs.sort([](const out_entry& a, const out_entry& b){return a.global_amount_index < b.global_amount_index;});
+      daemon_resp.outs[i].outs.sort(
+          [](const out_entry& a, const out_entry& b)
+          {
+            return a.global_amount_index < b.global_amount_index;
+          }
+        );
       for (out_entry& daemon_oe : daemon_resp.outs[i].outs)
       {
         if(td.m_global_output_index == daemon_oe.global_amount_index)
@@ -1257,6 +1269,9 @@ void wallet2::commit_tx(
 //
 // this function will make multiple calls to wallet2::transfer if multiple
 // transactions will be required
+//
+// Note that the pending transactions returned here must be committed by the
+// calling code
 std::vector<pending_tx> wallet2::create_transactions(
     std::vector<cryptonote::tx_destination_entry> dsts
   , const size_t fake_outs_count
