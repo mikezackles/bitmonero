@@ -553,18 +553,18 @@ bool wallet2::store_keys_to_file(
   std::string account_data;
   bool r = epee::serialization::store_t_to_binary(m_core_data, account_data);
   CHECK_AND_ASSERT_MES(r, false, "failed to serialize wallet keys");
-  wallet2::keys_file_data keys_file_data = boost::value_initialized<wallet2::keys_file_data>();
+  keys_file_data file_data {};
 
   crypto::chacha8_key key;
   crypto::generate_chacha8_key(password, key);
   std::string cipher;
   cipher.resize(account_data.size());
-  keys_file_data.iv = crypto::rand<crypto::chacha8_iv>();
-  crypto::chacha8(account_data.data(), account_data.size(), key, keys_file_data.iv, &cipher[0]);
-  keys_file_data.account_data = cipher;
+  file_data.iv = crypto::rand<crypto::chacha8_iv>();
+  crypto::chacha8(account_data.data(), account_data.size(), key, file_data.iv, &cipher[0]);
+  file_data.account_data = cipher;
 
   std::string buf;
-  r = ::serialization::dump_binary(keys_file_data, buf);
+  r = ::serialization::dump_binary(file_data, buf);
   r = r && epee::file_io_utils::save_string_to_file(keys_file_name, buf); //and never touch wallet_keys_file again, only read
   CHECK_AND_ASSERT_MES(r, false, "failed to generate wallet keys file " << keys_file_name);
 
@@ -589,13 +589,13 @@ void wallet2::load_keys_from_file(
   , const std::string& password
   )
 {
-  wallet2::keys_file_data keys_file_data;
+  keys_file_data file_data;
   std::string buf;
   if (!epee::file_io_utils::load_file_to_string(keys_file_name, buf))
   {
     throw error::file_read_error { LOCATION_TAG, keys_file_name };
   }
-  else if (!::serialization::parse_binary(buf, keys_file_data))
+  else if (!::serialization::parse_binary(buf, file_data))
   {
     throw error::internal_error { LOCATION_TAG, "failed to deserialize \"" + keys_file_name + '\"' };
   }
@@ -603,8 +603,8 @@ void wallet2::load_keys_from_file(
   crypto::chacha8_key key;
   crypto::generate_chacha8_key(password, key);
   std::string account_data;
-  account_data.resize(keys_file_data.account_data.size());
-  crypto::chacha8(keys_file_data.account_data.data(), keys_file_data.account_data.size(), key, keys_file_data.iv, &account_data[0]);
+  account_data.resize(file_data.account_data.size());
+  crypto::chacha8(file_data.account_data.data(), file_data.account_data.size(), key, file_data.iv, &account_data[0]);
 
   bool r;
   r = epee::serialization::load_t_from_binary(m_core_data, account_data);
@@ -816,7 +816,7 @@ uint64_t wallet2::balance()
 }
 
 void wallet2::get_transfers(
-    wallet2::transfer_container& incoming_transfers
+    transfer_container& incoming_transfers
   ) const
 {
   incoming_transfers = m_transfers;
@@ -824,7 +824,7 @@ void wallet2::get_transfers(
 
 void wallet2::get_payments(
     const crypto::hash& payment_id
-  , std::list<wallet2::payment_details>& payments
+  , std::list<payment_details>& payments
   , uint64_t min_height
   ) const
 {
@@ -871,27 +871,13 @@ bool wallet2::is_tx_spendtime_unlocked(
   if(unlock_time < CRYPTONOTE_MAX_BLOCK_NUMBER)
   {
     //interpret as block index
-    if(m_blockchain.size()-1 + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_BLOCKS >= unlock_time)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return m_blockchain.size()-1 + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_BLOCKS >= unlock_time;
   }
   else
   {
     //interpret as time
     uint64_t current_time = static_cast<uint64_t>(time(NULL));
-    if(current_time + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS >= unlock_time)
-    {
-      return true;
-    }
-    else
-    {
-      return false;
-    }
+    return current_time + CRYPTONOTE_LOCKED_TX_ALLOWED_DELTA_SECONDS >= unlock_time;
   }
   return false;
 }
@@ -1246,7 +1232,7 @@ void wallet2::commit_tx(
 //
 // this function will make multiple calls to wallet2::transfer if multiple
 // transactions will be required
-std::vector<wallet2::pending_tx> wallet2::create_transactions(
+std::vector<pending_tx> wallet2::create_transactions(
     std::vector<cryptonote::tx_destination_entry> dsts
   , const size_t fake_outs_count
   , const uint64_t unlock_time

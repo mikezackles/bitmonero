@@ -707,7 +707,7 @@ bool simple_wallet::show_incoming_transfers(const std::vector<std::string>& args
     }
   }
 
-  tools::wallet2::transfer_container transfers;
+  tools::transfer_container transfers;
   m_wallet->get_transfers(transfers);
 
   bool transfers_found = false;
@@ -765,7 +765,7 @@ bool simple_wallet::show_payments(const std::vector<std::string> &args)
     crypto::hash payment_id;
     if(tools::wallet2::parse_payment_id(arg, payment_id))
     {
-      std::list<tools::wallet2::payment_details> payments;
+      std::list<tools::payment_details> payments;
       m_wallet->get_payments(payment_id, payments);
       if(payments.empty())
       {
@@ -773,7 +773,7 @@ bool simple_wallet::show_payments(const std::vector<std::string> &args)
         continue;
       }
 
-      for (const tools::wallet2::payment_details& pd : payments)
+      for (const tools::payment_details& pd : payments)
       {
         if(!payments_found)
         {

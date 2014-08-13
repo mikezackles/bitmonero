@@ -171,7 +171,7 @@ namespace tools
 
     try
     {
-      std::vector<wallet2::pending_tx> ptx_vector = m_wallet.create_transactions(dsts, req.mixin, req.unlock_time, req.fee, extra);
+      std::vector<pending_tx> ptx_vector = m_wallet.create_transactions(dsts, req.mixin, req.unlock_time, req.fee, extra);
 
       // reject proposed transactions if there are more than one.  see on_transfer_split below.
       if (ptx_vector.size() != 1)
@@ -222,7 +222,7 @@ namespace tools
 
     try
     {
-      std::vector<wallet2::pending_tx> ptx_vector = m_wallet.create_transactions(dsts, req.mixin, req.unlock_time, req.fee, extra);
+      std::vector<pending_tx> ptx_vector = m_wallet.create_transactions(dsts, req.mixin, req.unlock_time, req.fee, extra);
 
       m_wallet.commit_tx(ptx_vector);
 
@@ -291,7 +291,7 @@ namespace tools
     payment_id = *reinterpret_cast<const crypto::hash*>(payment_id_blob.data());
 
     res.payments.clear();
-    std::list<wallet2::payment_details> payment_list;
+    std::list<payment_details> payment_list;
     m_wallet.get_payments(payment_id, payment_list);
     for (auto & payment : payment_list)
     {
@@ -334,7 +334,7 @@ namespace tools
 
       payment_id = *reinterpret_cast<const crypto::hash*>(payment_id_blob.data());
 
-      std::list<wallet2::payment_details> payment_list;
+      std::list<payment_details> payment_list;
       m_wallet.get_payments(payment_id, payment_list, req.min_block_height);
 
       for (auto & payment : payment_list)
@@ -374,7 +374,7 @@ namespace tools
       available = false;
     }
 
-    wallet2::transfer_container transfers;
+    transfer_container transfers;
     m_wallet.get_transfers(transfers);
 
     bool transfers_found = false;

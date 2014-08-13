@@ -30,6 +30,15 @@
 
 #pragma once
 
+#include "wallet/i_wallet2_callback.h"
+#include "wallet/transfer_container.h"
+#include "wallet/transfer_details.h"
+#include "wallet/tx_dust_policy.h"
+#include "wallet/payment_details.h"
+#include "wallet/pending_tx.h"
+#include "wallet/keys_file_data.h"
+#include "wallet/unconfirmed_transfer_details.h"
+
 #include <memory>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/vector.hpp>
@@ -61,110 +70,10 @@ namespace
   unsigned int const WALLET_RCP_CONNECTION_TIMEOUT = 200000;
 }
 
-class i_wallet2_callback
-{
-public:
-  virtual void on_new_block(
-      uint64_t height
-    , const cryptonote::block& block
-    )
-  {}
-
-  virtual void on_money_received(
-      uint64_t height
-    , const cryptonote::transaction& tx
-    , size_t out_index
-    )
-  {}
-
-  virtual void on_money_spent(
-      uint64_t height
-    , const cryptonote::transaction& in_tx
-    , size_t out_index
-    , const cryptonote::transaction& spend_tx
-    )
-  {}
-
-  virtual void on_skip_transaction(
-      uint64_t height
-    , const cryptonote::transaction& tx
-    )
-  {}
-};
-
-struct tx_dust_policy
-{
-  uint64_t dust_threshold;
-  bool add_to_fee;
-  cryptonote::account_public_address addr_for_dust;
-
-  tx_dust_policy(
-      uint64_t a_dust_threshold = 0
-    , bool an_add_to_fee = true
-    , cryptonote::account_public_address an_addr_for_dust = cryptonote::account_public_address()
-    )
-    : dust_threshold(a_dust_threshold)
-    , add_to_fee(an_add_to_fee)
-    , addr_for_dust(an_addr_for_dust)
-  {}
-};
-
 class wallet2
 {
 public:
-  struct transfer_details
-  {
-    uint64_t m_block_height;
-    cryptonote::transaction m_tx;
-    size_t m_internal_output_index;
-    uint64_t m_global_output_index;
-    bool m_spent;
-    crypto::key_image m_key_image; //TODO: key_image stored twice :(
-
-    uint64_t amount() const
-    {
-      return m_tx.vout[m_internal_output_index].amount;
-    }
-  };
-
-  struct payment_details
-  {
-    crypto::hash m_tx_hash;
-    uint64_t m_amount;
-    uint64_t m_block_height;
-    uint64_t m_unlock_time;
-  };
-
-  struct unconfirmed_transfer_details
-  {
-    cryptonote::transaction m_tx;
-    uint64_t m_change;
-    time_t m_sent_time;
-  };
-
-  typedef std::vector<transfer_details> transfer_container;
   typedef std::unordered_multimap<crypto::hash, payment_details> payment_container;
-
-  struct pending_tx
-  {
-    cryptonote::transaction tx;
-    uint64_t dust, fee;
-    cryptonote::tx_destination_entry change_dts;
-    std::list<transfer_container::iterator> selected_transfers;
-    std::string key_images;
-  };
-
-  struct keys_file_data
-  {
-    crypto::chacha8_iv iv;
-    std::string account_data;
-
-    BEGIN_SERIALIZE_OBJECT()
-      FIELD(iv)
-      FIELD(account_data)
-    END_SERIALIZE()
-  };
-
 private:
   cryptonote::core_account_data m_core_data;
   uint64_t m_account_creation_timestamp; // not accurate for recovered accounts
@@ -300,12 +209,12 @@ public:
   bool check_connection();
 
   void get_transfers(
-      wallet2::transfer_container& incoming_transfers
+      transfer_container& incoming_transfers
     ) const;
 
   void get_payments(
       const crypto::hash& payment_id
-    , std::list<wallet2::payment_details>& payments
+    , std::list<payment_details>& payments
     , uint64_t min_height = 0
     ) const;
 
@@ -426,7 +335,7 @@ namespace serialization
   template <class Archive>
   inline void serialize(
       Archive &a
-    , tools::wallet2::transfer_details &x
+    , tools::transfer_details &x
     , const boost::serialization::version_type ver
     )
   {
@@ -441,7 +350,7 @@ namespace serialization
   template <class Archive>
   inline void serialize(
       Archive &a
-    , tools::wallet2::unconfirmed_transfer_details &x
+    , tools::unconfirmed_transfer_details &x
     , const boost::serialization::version_type ver
     )
   {
@@ -453,7 +362,7 @@ namespace serialization
   template <class Archive>
   inline void serialize(
       Archive& a
-    , tools::wallet2::payment_details& x
+    , tools::payment_details& x
     , const boost::serialization::version_type ver
     )
   {
