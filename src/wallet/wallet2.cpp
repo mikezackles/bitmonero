@@ -440,34 +440,24 @@ size_t wallet2::pull_blocks(
   return num_blocks_added;
 }
 
-void wallet2::refresh()
+size_t wallet2::refresh(uint64_t start_height)
 {
   size_t blocks_fetched = 0;
-  refresh(0, blocks_fetched);
-}
-
-void wallet2::refresh(
-    uint64_t start_height
-  , size_t & blocks_fetched
-  )
-{
-  blocks_fetched = 0;
-  size_t added_blocks = 0;
   size_t try_count = 0;
 
   while(m_run.load(std::memory_order_relaxed))
   {
     try
     {
-      blocks_fetched += pull_blocks(start_height);
-      if(!added_blocks)
+      size_t added_blocks = pull_blocks(start_height);
+      blocks_fetched += added_blocks;
+      if(0 == added_blocks)
       {
         break;
       }
     }
     catch (const std::exception&)
     {
-      blocks_fetched += added_blocks;
       if(try_count < 3)
       {
         LOG_PRINT_L1("Another try pull_blocks (try_count=" << try_count << ")...");
@@ -482,6 +472,7 @@ void wallet2::refresh(
   }
 
   LOG_PRINT_L1("Refresh done, blocks received: " << blocks_fetched << ", balance: " << print_money(balance()) << ", unlocked: " << print_money(unlocked_balance()));
+  return blocks_fetched;
 }
 
 void wallet2::detach_blockchain(

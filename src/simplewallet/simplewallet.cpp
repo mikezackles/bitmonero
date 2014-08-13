@@ -649,7 +649,6 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
 
   message_writer() << "Starting refresh...";
 
-  size_t fetched_blocks = 0;
   size_t start_height = 0;
   if(!args.empty()){
     try
@@ -664,7 +663,7 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
 
   try
   {
-    m_wallet->refresh(start_height, fetched_blocks);
+    size_t fetched_blocks = m_wallet->refresh(start_height);
     // Clear line "Height xxx of xxx"
     std::cout << "\r                                                                \r";
     success_msg_writer(true) << "Refresh done, blocks received: " << fetched_blocks;
@@ -672,12 +671,12 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
   }
   catch (const std::exception& e)
   {
-    fail_msg_writer() << "refresh failed: " << e.what() << ". Blocks received: " << fetched_blocks;
+    fail_msg_writer() << "refresh failed: " << e.what();
   }
   catch (...)
   {
     LOG_ERROR("Unknown error");
-    fail_msg_writer() << "refresh failed: unknown error. Blocks received: " << fetched_blocks;
+    fail_msg_writer() << "refresh failed: unknown error";
   }
 
   return true;
@@ -1067,7 +1066,7 @@ int main(int argc, char* argv[])
       LOG_PRINT_L0("Loading wallet...");
       wal.load(wallet_file, wallet_password);
       wal.init(daemon_address);
-      wal.refresh();
+      wal.refresh(0);
       LOG_PRINT_GREEN("Loaded ok", LOG_LEVEL_0);
     }
     catch (const std::exception& e)

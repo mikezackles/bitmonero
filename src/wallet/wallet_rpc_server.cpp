@@ -58,7 +58,7 @@ namespace tools
   bool wallet_rpc_server::run()
   {
     m_net_server.add_idle_handler([this](){
-      m_wallet.refresh();
+      m_wallet.refresh(0);
       return true;
     }, 20000);
 

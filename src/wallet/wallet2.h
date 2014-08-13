@@ -154,24 +154,7 @@ public:
       std::string& electrum_words
     );
 
-  void refresh();
-
-  void refresh(
-      uint64_t start_height
-    , size_t & blocks_fetched
-    );
-
-  void refresh(
-      uint64_t start_height
-    , size_t & blocks_fetched
-    , bool& received_money
-    );
-
-  bool refresh(
-      size_t & blocks_fetched
-    , bool& received_money
-    , bool& ok
-    );
+  size_t refresh(uint64_t start_height);
 
   uint64_t balance();
 
