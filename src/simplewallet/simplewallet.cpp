@@ -661,55 +661,23 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
         start_height = 0;
     }
   }
-  
-  bool ok = false;
-  std::ostringstream ss;
+
   try
   {
     m_wallet->refresh(start_height, fetched_blocks);
-    ok = true;
     // Clear line "Height xxx of xxx"
     std::cout << "\r                                                                \r";
     success_msg_writer(true) << "Refresh done, blocks received: " << fetched_blocks;
     show_balance();
   }
-  catch (const tools::error::daemon_busy&)
-  {
-    ss << "daemon is busy. Please try later";
-  }
-  catch (const tools::error::no_connection_to_daemon&)
-  {
-    ss << "no connection to daemon. Please, make sure daemon is running";
-  }
-  catch (const tools::error::wallet_rpc_error& e)
-  {
-    LOG_ERROR("Unknown RPC error: " << e.to_string());
-    ss << "RPC error \"" << e.what() << '"';
-  }
-  catch (const tools::error::refresh_error& e)
-  {
-    LOG_ERROR("refresh error: " << e.to_string());
-    ss << e.what();
-  }
-  catch (const tools::error::wallet_internal_error& e)
-  {
-    LOG_ERROR("internal error: " << e.to_string());
-    ss << "internal error: " << e.what();
-  }
   catch (const std::exception& e)
   {
-    LOG_ERROR("unexpected error: " << e.what());
-    ss << "unexpected error: " << e.what();
+    fail_msg_writer() << "refresh failed: " << e.what() << ". Blocks received: " << fetched_blocks;
   }
   catch (...)
   {
     LOG_ERROR("Unknown error");
-    ss << "unknown error";
-  }
-
-  if (!ok)
-  {
-    fail_msg_writer() << "refresh failed: " << ss.str() << ". Blocks received: " << fetched_blocks;
+    fail_msg_writer() << "refresh failed: unknown error. Blocks received: " << fetched_blocks;
   }
 
   return true;
@@ -950,72 +918,9 @@ bool simple_wallet::transfer(const std::vector<std::string> &args_)
       ptx_vector.pop_back();
     }
   }
-  catch (const tools::error::daemon_busy&)
-  {
-    fail_msg_writer() << "daemon is busy. Please try later";
-  }
-  catch (const tools::error::no_connection_to_daemon&)
-  {
-    fail_msg_writer() << "no connection to daemon. Please, make sure daemon is running.";
-  }
-  catch (const tools::error::wallet_rpc_error& e)
-  {
-    LOG_ERROR("Unknown RPC error: " << e.to_string());
-    fail_msg_writer() << "RPC error \"" << e.what() << '"';
-  }
-  catch (const tools::error::get_random_outs_error&)
-  {
-    fail_msg_writer() << "failed to get random outputs to mix";
-  }
-  catch (const tools::error::not_enough_money& e)
-  {
-    fail_msg_writer() << "not enough money to transfer, available only " << print_money(e.available()) <<
-      ", transaction amount " << print_money(e.tx_amount() + e.fee()) << " = " << print_money(e.tx_amount()) <<
-      " + " << print_money(e.fee()) << " (fee)";
-  }
-  catch (const tools::error::not_enough_outs_to_mix& e)
-  {
-    auto writer = fail_msg_writer();
-    writer << "not enough outputs for specified mixin_count = " << e.mixin_count() << ":";
-    for (const cryptonote::COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount& outs_for_amount : e.scanty_outs())
-    {
-      writer << "\noutput amount = " << print_money(outs_for_amount.amount) << ", fount outputs to mix = " << outs_for_amount.outs.size();
-    }
-  }
-  catch (const tools::error::tx_not_constructed&)
-  {
-    fail_msg_writer() << "transaction was not constructed";
-  }
-  catch (const tools::error::tx_rejected& e)
-  {
-    fail_msg_writer() << "transaction " << get_transaction_hash(e.tx()) << " was rejected by daemon with status \"" << e.status() << '"';
-  }
-  catch (const tools::error::tx_sum_overflow& e)
-  {
-    fail_msg_writer() << e.what();
-  }
-  catch (const tools::error::zero_destination&)
-  {
-    fail_msg_writer() << "one of destinations is zero";
-  }
-  catch (const tools::error::tx_too_big& e)
-  {
-    fail_msg_writer() << "Failed to find a suitable way to split transactions";
-  }
-  catch (const tools::error::transfer_error& e)
-  {
-    LOG_ERROR("unknown transfer error: " << e.to_string());
-    fail_msg_writer() << "unknown transfer error: " << e.what();
-  }
-  catch (const tools::error::wallet_internal_error& e)
-  {
-    LOG_ERROR("internal error: " << e.to_string());
-    fail_msg_writer() << "internal error: " << e.what();
-  }
   catch (const std::exception& e)
   {
-    LOG_ERROR("unexpected error: " << e.what());
-    fail_msg_writer() << "unexpected error: " << e.what();
+    fail_msg_writer() << e.what();
   }
   catch (...)
   {

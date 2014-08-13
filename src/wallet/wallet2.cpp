@@ -146,8 +146,7 @@ void wallet2::process_new_transaction(
   }
 
   crypto::public_key tx_pub_key = pub_key_field.pub_key;
-  bool r = lookup_acc_outs(m_core_data.m_keys, tx, tx_pub_key, outs, tx_money_got_in_outs);
-  THROW_WALLET_EXCEPTION_IF(!r, error::acc_outs_lookup_error, tx, tx_pub_key, m_core_data.m_keys);
+  lookup_acc_outs(m_core_data.m_keys, tx, tx_pub_key, outs, tx_money_got_in_outs);
 
   if(!outs.empty() && tx_money_got_in_outs)
   {
@@ -156,18 +155,46 @@ void wallet2::process_new_transaction(
     cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::request req = AUTO_VAL_INIT(req);
     cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::response res = AUTO_VAL_INIT(res);
     req.txid = get_transaction_hash(tx);
-    bool r = net_utils::invoke_http_bin_remote_command2(m_daemon_address + "/get_o_indexes.bin", req, res, m_http_client, WALLET_RCP_CONNECTION_TIMEOUT);
-    THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "get_o_indexes.bin");
-    THROW_WALLET_EXCEPTION_IF(res.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "get_o_indexes.bin");
-    THROW_WALLET_EXCEPTION_IF(res.status != CORE_RPC_STATUS_OK, error::get_out_indices_error, res.status);
-    THROW_WALLET_EXCEPTION_IF(res.o_indexes.size() != tx.vout.size(), error::wallet_internal_error,
-      "transactions outputs size=" + std::to_string(tx.vout.size()) +
-      " not match with COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES response size=" + std::to_string(res.o_indexes.size()));
+    if (!net_utils::invoke_http_bin_remote_command2(
+          m_daemon_address + "/get_o_indexes.bin"
+        , req
+        , res
+        , m_http_client
+        , WALLET_RCP_CONNECTION_TIMEOUT
+        )
+      )
+    {
+      throw error::no_connection_to_daemon { LOCATION_TAG, "get_o_indexes.bin" };
+    }
+    else if (res.status == CORE_RPC_STATUS_BUSY)
+    {
+      throw error::daemon_busy { LOCATION_TAG, "get_o_indexes.bin" };
+    }
+    else if (res.status != CORE_RPC_STATUS_OK)
+    {
+      throw error::daemon_error { LOCATION_TAG, res.status };
+    }
+    else if (res.o_indexes.size() != tx.vout.size())
+    {
+      throw error::internal_error {
+          LOCATION_TAG
+        , "transactions outputs size (" + std::to_string(tx.vout.size()) + ") "
+        //+ "does not match COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES response size "
+        //+ "(" + std::to_string(res.o_indexes.size()) + ")"
+      };
+    }
 
     BOOST_FOREACH(size_t o, outs)
     {
-      THROW_WALLET_EXCEPTION_IF(tx.vout.size() <= o, error::wallet_internal_error, "wrong out in transaction: internal index=" +
-        std::to_string(o) + ", total_outs=" + std::to_string(tx.vout.size()));
+      if (tx.vout.size() <= o)
+      {
+        throw error::internal_error {
+            LOCATION_TAG
+          , "wrong out in transaction: internal index="
+          + std::to_string(o)
+          + ", total_outs=" + std::to_string(tx.vout.size())
+        };
+      }
 
       m_transfers.push_back(boost::value_initialized<transfer_details>());
       transfer_details& td = m_transfers.back();
@@ -178,8 +205,11 @@ void wallet2::process_new_transaction(
       td.m_spent = false;
       cryptonote::keypair in_ephemeral;
       cryptonote::generate_key_image_helper(m_core_data.m_keys, tx_pub_key, o, in_ephemeral, td.m_key_image);
-      THROW_WALLET_EXCEPTION_IF(in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[o].target).key,
-        error::wallet_internal_error, "key_image generated ephemeral public key not matched with output_key");
+
+      if (in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[o].target).key)
+      {
+        throw error::internal_error { LOCATION_TAG, "key_image generated ephemeral public key not matched with output_key"};
+      }
 
       m_key_images[td.m_key_image] = m_transfers.size()-1;
       LOG_PRINT_L0("Received money: " << print_money(td.amount()) << ", with tx: " << get_transaction_hash(tx));
@@ -256,8 +286,10 @@ void wallet2::process_new_blockchain_entry(
     BOOST_FOREACH(auto& txblob, bche.txs)
     {
       cryptonote::transaction tx;
-      bool r = parse_and_validate_tx_from_blob(txblob, tx);
-      THROW_WALLET_EXCEPTION_IF(!r, error::tx_parse_error, txblob);
+      if (!parse_and_validate_tx_from_blob(txblob, tx))
+      {
+        throw error::tx_parse_error { LOCATION_TAG };
+      }
       process_new_transaction(tx, height);
     }
     TIME_MEASURE_FINISH(txs_handle_time);
@@ -319,17 +351,34 @@ void wallet2::pull_blocks(
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::response res = AUTO_VAL_INIT(res);
   get_short_chain_history(req.block_ids);
   req.start_height = start_height;
-  bool r = net_utils::invoke_http_bin_remote_command2(m_daemon_address + "/getblocks.bin", req, res, m_http_client, WALLET_RCP_CONNECTION_TIMEOUT);
-  THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "getblocks.bin");
-  THROW_WALLET_EXCEPTION_IF(res.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "getblocks.bin");
-  THROW_WALLET_EXCEPTION_IF(res.status != CORE_RPC_STATUS_OK, error::get_blocks_error, res.status);
+  if (!net_utils::invoke_http_bin_remote_command2(
+        m_daemon_address + "/getblocks.bin"
+      , req
+      , res
+      , m_http_client
+      , WALLET_RCP_CONNECTION_TIMEOUT
+      )
+    )
+  {
+    throw error::no_connection_to_daemon { LOCATION_TAG, "getblocks.bin" };
+  }
+  else if (res.status == CORE_RPC_STATUS_BUSY)
+  {
+    throw error::daemon_busy { LOCATION_TAG, "getblocks.bin" };
+  }
+  else if (res.status != CORE_RPC_STATUS_OK)
+  {
+    throw error::get_blocks_error { LOCATION_TAG, res.status };
+  }
 
   size_t current_index = res.start_height;
   BOOST_FOREACH(auto& bl_entry, res.blocks)
   {
     cryptonote::block bl;
-    r = cryptonote::parse_and_validate_block_from_blob(bl_entry.block, bl);
-    THROW_WALLET_EXCEPTION_IF(!r, error::block_parse_error, bl_entry.block);
+    if (!cryptonote::parse_and_validate_block_from_blob(bl_entry.block, bl))
+    {
+      throw error::block_parse_error { LOCATION_TAG, bl_entry.block };
+    }
 
     crypto::hash bl_id = get_block_hash(bl);
     if(current_index >= m_blockchain.size())
@@ -340,10 +389,15 @@ void wallet2::pull_blocks(
     else if(bl_id != m_blockchain[current_index])
     {
       //split detected here !!!
-      THROW_WALLET_EXCEPTION_IF(current_index == res.start_height, error::wallet_internal_error,
-        "wrong daemon response: split starts from the first block in response " + string_tools::pod_to_hex(bl_id) +
-        " (height " + std::to_string(res.start_height) + "), local block id at this height: " +
-        string_tools::pod_to_hex(m_blockchain[current_index]));
+      if (current_index == res.start_height)
+      {
+        throw error::internal_error {
+            LOCATION_TAG
+          , "wrong daemon response: split starts from the first block in response " + string_tools::pod_to_hex(bl_id)
+          + " (height " + std::to_string(res.start_height) + "), local block id at this height: "
+          + string_tools::pod_to_hex(m_blockchain[current_index])
+        };
+      }
 
       detach_blockchain(current_index);
       process_new_blockchain_entry(bl, bl_entry, bl_id, current_index);
@@ -447,7 +501,10 @@ void wallet2::detach_blockchain(
   for(size_t i = i_start; i!= m_transfers.size();i++)
   {
     auto it_ki = m_key_images.find(m_transfers[i].m_key_image);
-    THROW_WALLET_EXCEPTION_IF(it_ki == m_key_images.end(), error::wallet_internal_error, "key image not found");
+    if (it_ki == m_key_images.end())
+    {
+      throw error::internal_error { LOCATION_TAG, "key image not found" };
+    }
     m_key_images.erase(it_ki);
     ++transfers_detached;
   }
@@ -534,10 +591,14 @@ void wallet2::load_keys_from_file(
 {
   wallet2::keys_file_data keys_file_data;
   std::string buf;
-  bool r = epee::file_io_utils::load_file_to_string(keys_file_name, buf);
-  THROW_WALLET_EXCEPTION_IF(!r, error::file_read_error, keys_file_name);
-  r = ::serialization::parse_binary(buf, keys_file_data);
-  THROW_WALLET_EXCEPTION_IF(!r, error::wallet_internal_error, "internal error: failed to deserialize \"" + keys_file_name + '\"');
+  if (!epee::file_io_utils::load_file_to_string(keys_file_name, buf))
+  {
+    throw error::file_read_error { LOCATION_TAG, keys_file_name };
+  }
+  else if (!::serialization::parse_binary(buf, keys_file_data))
+  {
+    throw error::internal_error { LOCATION_TAG, "failed to deserialize \"" + keys_file_name + '\"' };
+  }
 
   crypto::chacha8_key key;
   crypto::generate_chacha8_key(password, key);
@@ -545,10 +606,14 @@ void wallet2::load_keys_from_file(
   account_data.resize(keys_file_data.account_data.size());
   crypto::chacha8(keys_file_data.account_data.data(), keys_file_data.account_data.size(), key, keys_file_data.iv, &account_data[0]);
 
+  bool r;
   r = epee::serialization::load_t_from_binary(m_core_data, account_data);
   r = r && verify_keys(m_core_data.m_keys.m_view_secret_key,  m_core_data.m_keys.m_account_address.m_view_public_key);
   r = r && verify_keys(m_core_data.m_keys.m_spend_secret_key, m_core_data.m_keys.m_account_address.m_spend_public_key);
-  THROW_WALLET_EXCEPTION_IF(!r, error::invalid_password);
+  if (!r)
+  {
+    throw error::invalid_password { LOCATION_TAG };
+  }
 }
 
 crypto::secret_key wallet2::generate(
@@ -563,8 +628,14 @@ crypto::secret_key wallet2::generate(
   prepare_file_names(wallet_);
 
   boost::system::error_code ignored_ec;
-  THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_wallet_file, ignored_ec), error::file_exists, m_wallet_file);
-  THROW_WALLET_EXCEPTION_IF(boost::filesystem::exists(m_keys_file,   ignored_ec), error::file_exists, m_keys_file);
+  if (boost::filesystem::exists(m_wallet_file, ignored_ec))
+  {
+    throw error::file_exists_error { LOCATION_TAG, m_wallet_file };
+  }
+  else if (boost::filesystem::exists(m_keys_file, ignored_ec))
+  {
+    throw error::file_exists_error { LOCATION_TAG, m_keys_file };
+  }
 
   crypto::secret_key new_recovery_key;
   if (recover)
@@ -585,7 +656,10 @@ crypto::secret_key wallet2::generate(
   m_account_public_address = m_core_data.m_keys.m_account_address;
 
   bool r = store_keys_to_file(m_keys_file, password);
-  THROW_WALLET_EXCEPTION_IF(!r, error::file_save_error, m_keys_file);
+  if (!r)
+  {
+    throw error::file_save_error { LOCATION_TAG, m_keys_file };
+  }
 
   r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
   if(!r) LOG_PRINT_RED_L0("String with address text not saved");
@@ -662,7 +736,10 @@ void wallet2::load(
 
   boost::system::error_code e;
   bool exists = boost::filesystem::exists(m_keys_file, e);
-  THROW_WALLET_EXCEPTION_IF(e || !exists, error::file_not_found, m_keys_file);
+  if (e || !exists)
+  {
+    throw error::file_not_found_error { LOCATION_TAG, m_keys_file };
+  }
 
   load_keys_from_file(m_keys_file, password);
   LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_core_data.m_keys.m_account_address.base58());
@@ -676,11 +753,17 @@ void wallet2::load(
     return;
   }
   bool r = tools::unserialize_obj_from_file(*this, m_wallet_file);
-  THROW_WALLET_EXCEPTION_IF(!r, error::file_read_error, m_wallet_file);
-  THROW_WALLET_EXCEPTION_IF(
-    m_account_public_address.m_spend_public_key != m_core_data.m_keys.m_account_address.m_spend_public_key ||
-    m_account_public_address.m_view_public_key  != m_core_data.m_keys.m_account_address.m_view_public_key,
-    error::wallet_files_doesnt_correspond, m_keys_file, m_wallet_file);
+  if (!r)
+  {
+    throw error::file_read_error { LOCATION_TAG, m_wallet_file };
+  }
+  else if (
+      m_account_public_address.m_spend_public_key != m_core_data.m_keys.m_account_address.m_spend_public_key
+   || m_account_public_address.m_view_public_key  != m_core_data.m_keys.m_account_address.m_view_public_key
+   )
+  {
+    throw error::mismatched_files { LOCATION_TAG, m_wallet_file + ", " + m_keys_file };
+  }
 
   if(m_blockchain.empty())
   {
@@ -693,8 +776,10 @@ void wallet2::load(
 
 void wallet2::store()
 {
-  bool r = tools::serialize_obj_to_file(*this, m_wallet_file);
-  THROW_WALLET_EXCEPTION_IF(!r, error::file_save_error, m_wallet_file);
+  if (!tools::serialize_obj_to_file(*this, m_wallet_file))
+  {
+    throw error::file_save_error { LOCATION_TAG, m_wallet_file };
+  }
 }
 
 uint64_t wallet2::unlocked_balance()
@@ -912,7 +997,10 @@ void wallet2::transfer(
 {
   using namespace cryptonote;
   // throw if attempting a transaction with no destinations
-  THROW_WALLET_EXCEPTION_IF(dsts.empty(), error::zero_destination);
+  if (dsts.empty())
+  {
+    throw error::zero_destination { LOCATION_TAG };
+  }
 
   uint64_t needed_money = fee;
 
@@ -920,16 +1008,25 @@ void wallet2::transfer(
   // throw if total amount overflows uint64_t
   BOOST_FOREACH(auto& dt, dsts)
   {
-    THROW_WALLET_EXCEPTION_IF(0 == dt.amount, error::zero_destination);
+    if (0 == dt.amount)
+    {
+      throw error::zero_destination { LOCATION_TAG };
+    }
     needed_money += dt.amount;
-    THROW_WALLET_EXCEPTION_IF(needed_money < dt.amount, error::tx_sum_overflow, dsts, fee);
+    if (needed_money < dt.amount)
+    {
+      throw error::tx_sum_overflow { LOCATION_TAG };
+    }
   }
 
   // randomly select inputs for transaction
   // throw if requested send amount is greater than amount available to send
   std::list<transfer_container::iterator> selected_transfers;
   uint64_t found_money = select_transfers(needed_money, 0 == fake_outputs_count, dust_policy.dust_threshold, selected_transfers);
-  THROW_WALLET_EXCEPTION_IF(found_money < needed_money, error::not_enough_money, found_money, needed_money - fee, fee);
+  if (found_money < needed_money)
+  {
+    throw error::not_enough_money { LOCATION_TAG, "found: " + std::to_string(found_money) + ", need:" + std::to_string(needed_money) };
+  }
 
   typedef COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::out_entry out_entry;
   typedef cryptonote::tx_source_entry::output_entry tx_output_entry;
@@ -941,9 +1038,14 @@ void wallet2::transfer(
     req.outs_count = fake_outputs_count + 1;// add one to make possible (if need) to skip real output key
     BOOST_FOREACH(transfer_container::iterator it, selected_transfers)
     {
-      THROW_WALLET_EXCEPTION_IF(it->m_tx.vout.size() <= it->m_internal_output_index, error::wallet_internal_error,
-        "m_internal_output_index = " + std::to_string(it->m_internal_output_index) +
-        " is greater or equal to outputs count = " + std::to_string(it->m_tx.vout.size()));
+      if (it->m_tx.vout.size() <= it->m_internal_output_index)
+      {
+        throw error::internal_error {
+            LOCATION_TAG
+          , "m_internal_output_index = " + std::to_string(it->m_internal_output_index)
+          + " is greater or equal to outputs count = " + std::to_string(it->m_tx.vout.size())
+        };
+      }
       req.amounts.push_back(it->amount());
     }
 
@@ -955,12 +1057,25 @@ void wallet2::transfer(
       , 200000
       );
 
-    THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "getrandom_outs.bin");
-    THROW_WALLET_EXCEPTION_IF(daemon_resp.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "getrandom_outs.bin");
-    THROW_WALLET_EXCEPTION_IF(daemon_resp.status != CORE_RPC_STATUS_OK, error::get_random_outs_error, daemon_resp.status);
-    THROW_WALLET_EXCEPTION_IF(daemon_resp.outs.size() != selected_transfers.size(), error::wallet_internal_error,
-      "daemon returned wrong response for getrandom_outs.bin, wrong amounts count = " +
-      std::to_string(daemon_resp.outs.size()) + ", expected " +  std::to_string(selected_transfers.size()));
+    if (!r)
+    {
+      throw error::no_connection_to_daemon { LOCATION_TAG, "getrandom_outs.bin" };
+    }
+    else if (daemon_resp.status == CORE_RPC_STATUS_BUSY)
+    {
+      throw error::daemon_busy { LOCATION_TAG, "getrandom_outs.bin" };
+    }
+    else if (daemon_resp.status != CORE_RPC_STATUS_OK)
+    {
+      throw error::get_random_outs_error { LOCATION_TAG, daemon_resp.status };
+    }
+    if (daemon_resp.outs.size() != selected_transfers.size())
+    {
+      throw error::internal_error {
+          LOCATION_TAG
+        , "daemon returned incorrect number of transactions for getrandom_outs.bin"
+      };
+    }
 
     std::vector<COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount> scanty_outs;
     BOOST_FOREACH(COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount& amount_outs, daemon_resp.outs)
@@ -970,7 +1085,10 @@ void wallet2::transfer(
         scanty_outs.push_back(amount_outs);
       }
     }
-    THROW_WALLET_EXCEPTION_IF(!scanty_outs.empty(), error::not_enough_outs_to_mix, scanty_outs, fake_outputs_count);
+    if (!scanty_outs.empty())
+    {
+      throw error::not_enough_outs_to_mix { LOCATION_TAG };
+    }
   }
 
   //prepare inputs
@@ -1026,16 +1144,28 @@ void wallet2::transfer(
   uint64_t dust = 0;
   std::vector<cryptonote::tx_destination_entry> splitted_dsts;
   destination_split_strategy(dsts, change_dts, dust_policy.dust_threshold, splitted_dsts, dust);
-  THROW_WALLET_EXCEPTION_IF(dust_policy.dust_threshold < dust, error::wallet_internal_error, "invalid dust value: dust = " +
-    std::to_string(dust) + ", dust_threshold = " + std::to_string(dust_policy.dust_threshold));
+  if (dust_policy.dust_threshold < dust)
+  {
+    throw error::internal_error {
+      LOCATION_TAG
+    , "invalid dust value: dust = " + std::to_string(dust)
+    + ", dust_threshold = " + std::to_string(dust_policy.dust_threshold)
+    };
+  }
   if (0 != dust && !dust_policy.add_to_fee)
   {
     splitted_dsts.push_back(cryptonote::tx_destination_entry(dust, dust_policy.addr_for_dust));
   }
 
   bool r = cryptonote::construct_tx(m_core_data.m_keys, sources, splitted_dsts, extra, tx, unlock_time);
-  THROW_WALLET_EXCEPTION_IF(!r, error::tx_not_constructed, sources, splitted_dsts, unlock_time);
-  THROW_WALLET_EXCEPTION_IF(m_upper_transaction_size_limit <= get_object_blobsize(tx), error::tx_too_big, tx, m_upper_transaction_size_limit);
+  if (!r)
+  {
+    throw error::tx_not_constructed { LOCATION_TAG };
+  }
+  else if(m_upper_transaction_size_limit <= get_object_blobsize(tx))
+  {
+    throw error::tx_too_big { LOCATION_TAG };
+  }
 
   std::string key_images;
   bool all_are_txin_to_key = std::all_of(tx.vin.begin(), tx.vin.end(), [&](const txin_v& s_e) -> bool
@@ -1044,7 +1174,10 @@ void wallet2::transfer(
     key_images += boost::to_string(in.k_image) + " ";
     return true;
   });
-  THROW_WALLET_EXCEPTION_IF(!all_are_txin_to_key, error::unexpected_txin_type, tx);
+  if (!all_are_txin_to_key)
+  {
+    throw error::unexpected_txin_type { LOCATION_TAG };
+  }
 
   ptx.key_images = key_images;
   ptx.fee = fee;
@@ -1070,9 +1203,18 @@ void wallet2::commit_tx(
     , m_http_client
     , 200000
     );
-  THROW_WALLET_EXCEPTION_IF(!r, error::no_connection_to_daemon, "sendrawtransaction");
-  THROW_WALLET_EXCEPTION_IF(daemon_send_resp.status == CORE_RPC_STATUS_BUSY, error::daemon_busy, "sendrawtransaction");
-  THROW_WALLET_EXCEPTION_IF(daemon_send_resp.status != CORE_RPC_STATUS_OK, error::tx_rejected, ptx.tx, daemon_send_resp.status);
+  if (!r)
+  {
+    throw error::no_connection_to_daemon { LOCATION_TAG, "sendrawtransaction" };
+  }
+  else if (daemon_send_resp.status == CORE_RPC_STATUS_BUSY)
+  {
+    throw error::daemon_busy { LOCATION_TAG, "sendrawtransaction" };
+  }
+  else if (daemon_send_resp.status != CORE_RPC_STATUS_OK)
+  {
+    throw error::tx_rejected { LOCATION_TAG, daemon_send_resp.status };
+  }
 
   add_unconfirmed_tx(ptx.tx, ptx.change_dts.amount);
 
