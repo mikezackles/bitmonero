@@ -184,7 +184,7 @@ void wallet2::process_new_transaction(
       };
     }
 
-    BOOST_FOREACH(size_t o, outs)
+    for (size_t o : outs)
     {
       if (tx.vout.size() <= o)
       {
@@ -220,7 +220,7 @@ void wallet2::process_new_transaction(
 
   uint64_t tx_money_spent_in_ins = 0;
   // check all outputs for spending (compare key images)
-  BOOST_FOREACH(auto& in, tx.vin)
+  for (auto& in : tx.vin)
   {
     if(in.type() != typeid(cryptonote::txin_to_key))
       continue;
@@ -283,7 +283,7 @@ void wallet2::process_new_blockchain_entry(
     TIME_MEASURE_FINISH(miner_tx_handle_time);
 
     TIME_MEASURE_START(txs_handle_time);
-    BOOST_FOREACH(auto& txblob, bche.txs)
+    for (auto& txblob : bche.txs)
     {
       cryptonote::transaction tx;
       if (!parse_and_validate_tx_from_blob(txblob, tx))
@@ -372,7 +372,7 @@ void wallet2::pull_blocks(
   }
 
   size_t current_index = res.start_height;
-  BOOST_FOREACH(auto& bl_entry, res.blocks)
+  for (auto& bl_entry : res.blocks)
   {
     cryptonote::block bl;
     if (!cryptonote::parse_and_validate_block_from_blob(bl_entry.block, bl))
@@ -785,7 +785,7 @@ void wallet2::store()
 uint64_t wallet2::unlocked_balance()
 {
   uint64_t amount = 0;
-  BOOST_FOREACH(transfer_details& td, m_transfers)
+  for (transfer_details& td : m_transfers)
   {
     if(!td.m_spent && is_transfer_unlocked(td))
     {
@@ -799,7 +799,7 @@ uint64_t wallet2::unlocked_balance()
 uint64_t wallet2::balance()
 {
   uint64_t amount = 0;
-  BOOST_FOREACH(auto& td, m_transfers)
+  for (auto& td : m_transfers)
   {
     if(!td.m_spent)
     {
@@ -807,7 +807,7 @@ uint64_t wallet2::balance()
     }
   }
 
-  BOOST_FOREACH(auto& utx, m_unconfirmed_txs)
+  for (auto& utx : m_unconfirmed_txs)
   {
     amount+= utx.second.m_change;
   }
@@ -992,7 +992,7 @@ void wallet2::transfer(
 
   // calculate total amount being sent to all destinations
   // throw if total amount overflows uint64_t
-  BOOST_FOREACH(auto& dt, dsts)
+  for (auto& dt : dsts)
   {
     if (0 == dt.amount)
     {
@@ -1022,7 +1022,7 @@ void wallet2::transfer(
   {
     COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::request req = AUTO_VAL_INIT(req);
     req.outs_count = fake_outputs_count + 1;// add one to make possible (if need) to skip real output key
-    BOOST_FOREACH(transfer_container::iterator it, selected_transfers)
+    for (transfer_container::iterator it : selected_transfers)
     {
       if (it->m_tx.vout.size() <= it->m_internal_output_index)
       {
@@ -1064,7 +1064,7 @@ void wallet2::transfer(
     }
 
     std::vector<COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount> scanty_outs;
-    BOOST_FOREACH(COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount& amount_outs, daemon_resp.outs)
+    for (COMMAND_RPC_GET_RANDOM_OUTPUTS_FOR_AMOUNTS::outs_for_amount& amount_outs : daemon_resp.outs)
     {
       if (amount_outs.outs.size() < fake_outputs_count)
       {
@@ -1080,7 +1080,7 @@ void wallet2::transfer(
   //prepare inputs
   size_t i = 0;
   std::vector<cryptonote::tx_source_entry> sources;
-  BOOST_FOREACH(transfer_container::iterator it, selected_transfers)
+  for (transfer_container::iterator it : selected_transfers)
   {
     sources.resize(sources.size()+1);
     cryptonote::tx_source_entry& src = sources.back();
@@ -1090,7 +1090,7 @@ void wallet2::transfer(
     if(daemon_resp.outs.size())
     {
       daemon_resp.outs[i].outs.sort([](const out_entry& a, const out_entry& b){return a.global_amount_index < b.global_amount_index;});
-      BOOST_FOREACH(out_entry& daemon_oe, daemon_resp.outs[i].outs)
+      for (out_entry& daemon_oe : daemon_resp.outs[i].outs)
       {
         if(td.m_global_output_index == daemon_oe.global_amount_index)
           continue;
@@ -1206,7 +1206,7 @@ void wallet2::commit_tx(
 
   LOG_PRINT_L2("transaction " << get_transaction_hash(ptx.tx) << " generated ok and sent to daemon, key_images: [" << ptx.key_images << "]");
 
-  BOOST_FOREACH(transfer_container::iterator it, ptx.selected_transfers)
+  for (transfer_container::iterator it : ptx.selected_transfers)
   {
     it->m_spent = true;
   }
@@ -1276,7 +1276,7 @@ std::vector<pending_tx> wallet2::create_transactions(
         ptx_vector.push_back(ptx);
 
         // mark transfers to be used as "spent"
-        BOOST_FOREACH(transfer_container::iterator it, ptx.selected_transfers)
+        for (transfer_container::iterator it : ptx.selected_transfers)
         {
           it->m_spent = true;
         }
@@ -1288,7 +1288,7 @@ std::vector<pending_tx> wallet2::create_transactions(
       for (auto & ptx : ptx_vector)
       {
         // mark transfers to be used as not spent
-        BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        for (transfer_container::iterator it2 : ptx.selected_transfers)
         {
           it2->m_spent = false;
         }
@@ -1306,7 +1306,7 @@ std::vector<pending_tx> wallet2::create_transactions(
       for (auto & ptx : ptx_vector)
       {
         // mark transfers to be used as not spent
-        BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        for (transfer_container::iterator it2 : ptx.selected_transfers)
         {
           it2->m_spent = false;
         }
@@ -1325,7 +1325,7 @@ std::vector<pending_tx> wallet2::create_transactions(
       for (auto & ptx : ptx_vector)
       {
         // mark transfers to be used as not spent
-        BOOST_FOREACH(transfer_container::iterator it2, ptx.selected_transfers)
+        for (transfer_container::iterator it2 : ptx.selected_transfers)
         {
           it2->m_spent = false;
         }
