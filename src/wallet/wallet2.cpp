@@ -326,7 +326,6 @@ void wallet2::process_new_blockchain_entry(
     LOG_PRINT_L2( "Skipped block by timestamp, height: " << height << ", block time " << b.timestamp << ", account time " << m_account_creation_timestamp);
   }
   m_blockchain.push_back(bl_id);
-  ++m_local_bc_height;
 
   if (nullptr != m_callback)
   {
@@ -541,7 +540,6 @@ void wallet2::detach_blockchain(
 
   size_t blocks_detached = m_blockchain.end() - (m_blockchain.begin()+height);
   m_blockchain.erase(m_blockchain.begin()+height, m_blockchain.end());
-  m_local_bc_height -= blocks_detached;
 
   for (auto it = m_payments.begin(); it != m_payments.end(); )
   {
@@ -570,7 +568,6 @@ bool wallet2::clear()
   cryptonote::block b;
   cryptonote::generate_genesis_block(b);
   m_blockchain.push_back(get_block_hash(b));
-  m_local_bc_height = 1;
   return true;
 }
 
@@ -800,7 +797,6 @@ void wallet2::load(
     cryptonote::generate_genesis_block(b);
     m_blockchain.push_back(get_block_hash(b));
   }
-  m_local_bc_height = m_blockchain.size();
 }
 
 void wallet2::store()

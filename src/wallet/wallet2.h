@@ -82,7 +82,6 @@ private:
   std::string m_keys_file;
   epee::net_utils::http::http_simple_client m_http_client;
   std::vector<crypto::hash> m_blockchain;
-  std::atomic<uint64_t> m_local_bc_height; //temporary workaround
   std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
 
   transfer_container m_transfers;
@@ -217,11 +216,6 @@ public:
     , std::list<payment_details>& payments
     , uint64_t min_height = 0
     ) const;
-
-  uint64_t get_blockchain_current_height() const
-  {
-    return m_local_bc_height;
-  }
 
   std::string secret_view_key_as_hex();
 
