@@ -328,7 +328,7 @@ void wallet2::process_new_blockchain_entry(
   m_blockchain.push_back(bl_id);
   ++m_local_bc_height;
 
-  if (0 != m_callback)
+  if (nullptr != m_callback)
   {
     m_callback->on_new_block(height, b);
   }
@@ -342,7 +342,9 @@ void wallet2::get_short_chain_history(
   size_t current_multiplier = 1;
   size_t sz = m_blockchain.size();
   if(!sz)
+  {
     return;
+  }
   size_t current_back_offset = 1;
   bool genesis_included = false;
   while(current_back_offset < sz)
@@ -355,7 +357,8 @@ void wallet2::get_short_chain_history(
     if(i < 10)
     {
       ++current_back_offset;
-    }else
+    }
+    else
     {
       current_back_offset += current_multiplier *= 2;
     }
