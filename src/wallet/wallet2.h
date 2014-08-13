@@ -130,11 +130,6 @@ public:
     m_run.store(false, std::memory_order_relaxed);
   }
 
-  i_wallet2_callback* callback() const
-  {
-    return m_callback;
-  }
-
   void callback(i_wallet2_callback* callback)
   {
     m_callback = callback;
