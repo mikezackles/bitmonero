@@ -294,10 +294,7 @@ private:
 
   bool clear();
 
-  void pull_blocks(
-      uint64_t start_height
-    , size_t& blocks_added
-    );
+  size_t pull_blocks(uint64_t start_height);
 
   uint64_t select_transfers(
       uint64_t needed_money

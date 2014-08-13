@@ -369,12 +369,11 @@ void wallet2::get_short_chain_history(
   }
 }
 
-void wallet2::pull_blocks(
+size_t wallet2::pull_blocks(
     uint64_t start_height
-  , size_t& blocks_added
   )
 {
-  blocks_added = 0;
+  size_t num_blocks_added = 0;
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::request req {};
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::response res {};
   get_short_chain_history(req.block_ids);
@@ -412,7 +411,7 @@ void wallet2::pull_blocks(
     if(current_index >= m_blockchain.size())
     {
       process_new_blockchain_entry(bl, bl_entry, bl_id, current_index);
-      ++blocks_added;
+      ++num_blocks_added;
     }
     else if(bl_id != m_blockchain[current_index])
     {
@@ -437,6 +436,8 @@ void wallet2::pull_blocks(
 
     ++current_index;
   }
+
+  return num_blocks_added;
 }
 
 void wallet2::refresh()
@@ -470,8 +471,7 @@ void wallet2::refresh(
   {
     try
     {
-      pull_blocks(start_height, added_blocks);
-      blocks_fetched += added_blocks;
+      blocks_fetched += pull_blocks(start_height);
       if(!added_blocks)
       {
         break;
