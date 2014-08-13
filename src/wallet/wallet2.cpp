@@ -451,21 +451,9 @@ void wallet2::refresh(
   , size_t & blocks_fetched
   )
 {
-  bool received_money = false;
-  refresh(start_height, blocks_fetched, received_money);
-}
-
-void wallet2::refresh(
-    uint64_t start_height
-  , size_t & blocks_fetched
-  , bool& received_money
-  )
-{
-  received_money = false;
   blocks_fetched = 0;
   size_t added_blocks = 0;
   size_t try_count = 0;
-  crypto::hash last_tx_hash_id = m_transfers.size() ? get_transaction_hash(m_transfers.back().m_tx) : null_hash;
 
   while(m_run.load(std::memory_order_relaxed))
   {
@@ -492,30 +480,8 @@ void wallet2::refresh(
       }
     }
   }
-  if(last_tx_hash_id != (m_transfers.size() ? get_transaction_hash(m_transfers.back().m_tx) : null_hash))
-  {
-    received_money = true;
-  }
 
   LOG_PRINT_L1("Refresh done, blocks received: " << blocks_fetched << ", balance: " << print_money(balance()) << ", unlocked: " << print_money(unlocked_balance()));
-}
-
-bool wallet2::refresh(
-    size_t & blocks_fetched
-  , bool& received_money
-  , bool& ok
-  )
-{
-  try
-  {
-    refresh(0, blocks_fetched, received_money);
-    ok = true;
-  }
-  catch (...)
-  {
-    ok = false;
-  }
-  return ok;
 }
 
 void wallet2::detach_blockchain(
