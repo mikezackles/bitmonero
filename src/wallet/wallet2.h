@@ -64,12 +64,6 @@
 namespace tools
 {
 
-namespace
-{
-  uint64_t const DEFAULT_TX_SPENDABLE_AGE = 10;
-  unsigned int const WALLET_RCP_CONNECTION_TIMEOUT = 200000;
-}
-
 class wallet2
 {
 public:
