@@ -57,6 +57,12 @@ using namespace epee;
 namespace tools
 {
 
+namespace
+{
+  uint64_t const DEFAULT_TX_SPENDABLE_AGE = 10;
+  unsigned int const WALLET_RCP_CONNECTION_TIMEOUT = 200000;
+}
+
 // for now, limit to 30 attempts.  TODO: discuss a good number to limit to.
 const size_t MAX_SPLIT_ATTEMPTS = 30;
 
