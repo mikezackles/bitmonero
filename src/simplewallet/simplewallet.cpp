@@ -765,7 +765,7 @@ bool simple_wallet::show_payments(const std::vector<std::string> &args)
     crypto::hash payment_id;
     if(tools::wallet2::parse_payment_id(arg, payment_id))
     {
-      std::list<tools::payment_details> payments;
+      std::vector<tools::payment_details> payments;
       m_wallet->get_payments(payment_id, payments);
       if(payments.empty())
       {
