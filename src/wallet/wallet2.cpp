@@ -61,6 +61,20 @@ namespace
 {
   uint64_t const DEFAULT_TX_SPENDABLE_AGE = 10;
   unsigned int const WALLET_RCP_CONNECTION_TIMEOUT = 200000;
+
+  void print_source_entry(cryptonote::tx_source_entry const & src)
+  {
+    std::string indexes;
+    std::for_each(
+        src.outputs.begin()
+      , src.outputs.end()
+      , [&](const cryptonote::tx_source_entry::output_entry& s_e)
+        {
+          indexes += boost::to_string(s_e.first) + " ";
+        }
+      );
+    LOG_PRINT_L0("amount=" << cryptonote::print_money(src.amount) << ", real_output=" <<src.real_output << ", real_output_in_tx_index=" << src.real_output_in_tx_index << ", indexes: " << indexes);
+  }
 }
 
 // for now, limit to 30 attempts.  TODO: discuss a good number to limit to.
