@@ -93,28 +93,9 @@ void wallet2::init(
   m_daemon_address = daemon_address;
 }
 
-bool wallet2::get_seed(std::string & electrum_words)
+boost::optional<std::string> wallet2::get_seed()
 {
-  crypto::ElectrumWords::bytes_to_words(
-      m_core_data.m_keys.m_spend_secret_key
-    , electrum_words
-    );
-
-  crypto::secret_key second;
-  keccak(
-      (uint8_t *)&m_core_data.m_keys.m_spend_secret_key
-    , sizeof(crypto::secret_key)
-    , (uint8_t *)&second
-    , sizeof(crypto::secret_key)
-    );
-
-  sc_reduce32((uint8_t *)&second);
-
-  return memcmp(
-      second.data
-    , m_core_data.m_keys.m_view_secret_key.data
-    , sizeof(crypto::secret_key)
-    ) == 0;
+  return m_core_data.get_seed();
 }
 
 void wallet2::process_new_transaction(

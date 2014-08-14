@@ -41,6 +41,7 @@
 #include <memory>
 #include <boost/serialization/list.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/optional/optional.hpp>
 #include <atomic>
 
 #include "include_base_utils.h"
@@ -121,7 +122,7 @@ public:
     m_run.store(false, std::memory_order_relaxed);
   }
 
-  bool get_seed(std::string& electrum_words);
+  boost::optional<std::string> get_seed();
 
   size_t refresh(
       uint64_t start_height

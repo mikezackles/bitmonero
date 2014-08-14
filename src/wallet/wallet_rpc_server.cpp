@@ -408,10 +408,14 @@ namespace tools
   {
       if (req.key_type.compare("mnemonic") == 0)
       {
-        if (!m_wallet.get_seed(res.key))
+        if (auto maybe = m_wallet.get_seed())
         {
-            er.message = "The wallet is non-deterministic. Cannot display seed.";
-            return false;
+          res.key = std::move(*maybe);
+        }
+        else
+        {
+          er.message = "The wallet is non-deterministic. Cannot display seed.";
+          return false;
         }
       }
       else if(req.key_type.compare("view_key") == 0)

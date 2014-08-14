@@ -199,17 +199,14 @@ bool simple_wallet::viewkey(const std::vector<std::string> &args/* = std::vector
 
 bool simple_wallet::seed(const std::vector<std::string> &args/* = std::vector<std::string>()*/)
 {
-  std::string electrum_words;
-  bool success = m_wallet->get_seed(electrum_words);
-  
-  if (success) 
+  if (auto maybe = m_wallet->get_seed())
   {
     success_msg_writer(true) << "\nPLEASE NOTE: the following 24 words can be used to recover access to your wallet. Please write them down and store them somewhere safe and secure. Please do not store them in your email or on file storage services outside of your immediate control.\n";
-    std::cout << electrum_words << std::endl;      
+    std::cout << *maybe << std::endl;
   }
   else
   {
-      fail_msg_writer() << "The wallet is non-deterministic. Cannot display seed.";
+    fail_msg_writer() << "The wallet is non-deterministic. Cannot display seed.";
   }
   return true;
 }

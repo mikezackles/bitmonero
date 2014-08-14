@@ -34,6 +34,8 @@
 #include "crypto/crypto.h"
 #include "serialization/keyvalue_serialization.h"
 
+#include <boost/optional/optional.hpp>
+
 namespace cryptonote
 {
 
@@ -61,6 +63,8 @@ struct core_account_data
     archive & m_keys;
     archive & m_creation_timestamp;
   }
+
+  boost::optional<std::string> get_seed();
 
   BEGIN_KV_SERIALIZE_MAP()
     KV_SERIALIZE(m_keys)

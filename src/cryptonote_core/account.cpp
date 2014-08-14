@@ -32,7 +32,9 @@
 extern "C"
 {
 #include "crypto/keccak.h"
+#include "crypto/crypto-ops.h"
 }
+#include "crypto/electrum-words.h"
 #include <ctime>
 
 namespace cryptonote
@@ -127,6 +129,39 @@ core_account_data recover_account(
       std::move(keys)
     , static_cast<uint64_t>(mktime(&timestamp))
   };
+}
+
+boost::optional<std::string> core_account_data::get_seed()
+{
+  crypto::secret_key second;
+  keccak(
+      (uint8_t *)&m_keys.m_spend_secret_key
+    , sizeof(crypto::secret_key)
+    , (uint8_t *)&second
+    , sizeof(crypto::secret_key)
+    );
+
+  sc_reduce32((uint8_t *)&second);
+
+  if (
+      memcmp(
+        second.data
+      , m_keys.m_view_secret_key.data
+      , sizeof(crypto::secret_key)
+      ) == 0
+    )
+  {
+    std::string electrum_words;
+    crypto::ElectrumWords::bytes_to_words(
+        m_keys.m_spend_secret_key
+      , electrum_words
+      );
+    return electrum_words;
+  }
+  else
+  {
+    return boost::none;
+  }
 }
 
 }
