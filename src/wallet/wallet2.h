@@ -83,16 +83,12 @@ private:
 
   std::atomic<bool> m_run;
 
-  i_wallet2_callback* m_callback;
-
   wallet2(wallet2 const &)
     : m_run(true)
-    , m_callback(0)
   {};
 public:
   wallet2()
     : m_run(true)
-    , m_callback(0)
   {};
 
   crypto::secret_key generate(
@@ -127,14 +123,12 @@ public:
     m_run.store(false, std::memory_order_relaxed);
   }
 
-  void callback(i_wallet2_callback* callback)
-  {
-    m_callback = callback;
-  }
-
   bool get_seed(std::string& electrum_words);
 
-  size_t refresh(uint64_t start_height);
+  size_t refresh(
+      uint64_t start_height
+    , i_wallet2_callback const & callbacks = i_wallet2_callback {}
+    );
 
   uint64_t balance();
 
@@ -221,13 +215,15 @@ private:
   void process_new_transaction(
       cryptonote::transaction const & tx
     , uint64_t height
+    , i_wallet2_callback const & callbacks
     );
 
   void process_new_blockchain_entry(
       cryptonote::block const & b
-    , cryptonote::block_complete_entry& bche
-    , crypto::hash& bl_id
+    , cryptonote::block_complete_entry & bche
+    , crypto::hash & bl_id
     , uint64_t height
+    , i_wallet2_callback const & callbacks
     );
 
   void detach_blockchain(uint64_t height);
@@ -240,7 +236,10 @@ private:
 
   bool clear();
 
-  size_t pull_blocks(uint64_t start_height);
+  size_t pull_blocks(
+      uint64_t start_height
+    , i_wallet2_callback const & callbacks
+    );
 
   uint64_t select_transfers(
       uint64_t needed_money

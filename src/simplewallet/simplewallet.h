@@ -47,7 +47,7 @@ namespace cryptonote
   /************************************************************************/
   /*                                                                      */
   /************************************************************************/
-  class simple_wallet : public tools::i_wallet2_callback
+  class simple_wallet
   {
   public:
     typedef std::vector<std::string> command_type;
@@ -94,10 +94,10 @@ namespace cryptonote
     bool ask_wallet_create_if_needed();
 
     //----------------- i_wallet2_callback ---------------------
-    virtual void on_new_block(uint64_t height, const cryptonote::block& block);
-    virtual void on_money_received(uint64_t height, const cryptonote::transaction& tx, size_t out_index);
-    virtual void on_money_spent(uint64_t height, const cryptonote::transaction& in_tx, size_t out_index, const cryptonote::transaction& spend_tx);
-    virtual void on_skip_transaction(uint64_t height, const cryptonote::transaction& tx);
+    void on_new_block(uint64_t height, const cryptonote::block& block);
+    void on_money_received(uint64_t height, const cryptonote::transaction& tx, size_t out_index);
+    void on_money_spent(uint64_t height, const cryptonote::transaction& in_tx, size_t out_index, const cryptonote::transaction& spend_tx);
+    void on_skip_transaction(uint64_t height, const cryptonote::transaction& tx);
     //----------------------------------------------------------
 
     friend class refresh_progress_reporter_t;

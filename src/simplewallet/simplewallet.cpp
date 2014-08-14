@@ -28,6 +28,7 @@
 // 
 // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
 
+#include <functional>
 #include <thread>
 #include <iostream>
 #include <boost/lexical_cast.hpp>
@@ -46,6 +47,7 @@
 #include "version.h"
 #include "crypto/crypto.h"  // for crypto::secret_key definition
 #include "crypto/electrum-words.h"
+#include "wallet/i_wallet2_callback.h"
 
 #if defined(WIN32)
 #include <crtdbg.h>
@@ -428,7 +430,6 @@ bool simple_wallet::new_wallet(const string &wallet_file, const std::string& pas
   m_wallet_file = wallet_file;
 
   m_wallet.reset(new tools::wallet2());
-  m_wallet->callback(this);
 
   crypto::secret_key recovery_val;
   try
@@ -475,7 +476,6 @@ bool simple_wallet::open_wallet(const string &wallet_file, const std::string& pa
 {
   m_wallet_file = wallet_file;
   m_wallet.reset(new tools::wallet2());
-  m_wallet->callback(this);
 
   try
   {
@@ -663,7 +663,16 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
 
   try
   {
-    size_t fetched_blocks = m_wallet->refresh(start_height);
+    namespace ph = std::placeholders;
+    size_t fetched_blocks = m_wallet->refresh(
+        start_height
+      , tools::i_wallet2_callback {
+          std::bind(&simple_wallet::on_new_block, this, ph::_1, ph::_2)
+        , std::bind(&simple_wallet::on_money_received, this, ph::_1, ph::_2, ph::_3)
+        , std::bind(&simple_wallet::on_money_spent, this, ph::_1, ph::_2, ph::_3, ph::_4)
+        , std::bind(&simple_wallet::on_skip_transaction, this, ph::_1, ph::_2)
+        }
+      );
     // Clear line "Height xxx of xxx"
     std::cout << "\r                                                                \r";
     success_msg_writer(true) << "Refresh done, blocks received: " << fetched_blocks;
@@ -1063,6 +1072,7 @@ int main(int argc, char* argv[])
     tools::wallet2 wal;
     try
     {
+      namespace ph = std::placeholders;
       LOG_PRINT_L0("Loading wallet...");
       wal.load(wallet_file, wallet_password);
       wal.init(daemon_address);

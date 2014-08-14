@@ -122,6 +122,7 @@ bool wallet2::get_seed(std::string & electrum_words)
 void wallet2::process_new_transaction(
     cryptonote::transaction const & tx
   , uint64_t height
+  , i_wallet2_callback const & callbacks
   )
 {
   // Remove this transaction from the list of unconfirmed transactions if it is
@@ -150,10 +151,7 @@ void wallet2::process_new_transaction(
     if(!find_tx_extra_field_by_type(tx_extra_fields, public_key_field))
     {
       LOG_PRINT_L0("Public key wasn't found in the transaction extra. Skipping transaction " << get_transaction_hash(tx));
-      if(nullptr != m_callback)
-      {
-        m_callback->on_skip_transaction(height, tx);
-      }
+      callbacks.on_skip_transaction(height, tx);
       return;
     }
     incoming_public_key = public_key_field.pub_key;
@@ -247,10 +245,7 @@ void wallet2::process_new_transaction(
       // Record ownership of this transfer
       m_key_images[td.m_key_image] = m_transfers.size()-1;
       LOG_PRINT_L0("Received money: " << print_money(td.amount()) << ", with tx: " << get_transaction_hash(tx));
-      if (nullptr != m_callback)
-      {
-        m_callback->on_money_received(height, td.m_tx, td.m_internal_output_index);
-      }
+      callbacks.on_money_received(height, td.m_tx, td.m_internal_output_index);
     }
   }
 
@@ -273,10 +268,7 @@ void wallet2::process_new_transaction(
       money_spent += boost::get<cryptonote::txin_to_key>(in).amount;
       transfer_details& td = m_transfers[it->second];
       td.m_spent = true;
-      if (nullptr != m_callback)
-      {
-        m_callback->on_money_spent(height, td.m_tx, td.m_internal_output_index, tx);
-      }
+      callbacks.on_money_spent(height, td.m_tx, td.m_internal_output_index, tx);
     }
   }
 
@@ -307,6 +299,7 @@ void wallet2::process_new_blockchain_entry(
   , cryptonote::block_complete_entry & bche
   , crypto::hash & bl_id
   , uint64_t height
+  , i_wallet2_callback const & callbacks
   )
 {
   //handle transactions from new block
@@ -316,7 +309,11 @@ void wallet2::process_new_blockchain_entry(
   if(b.timestamp + 60*60*24 > m_account_creation_timestamp)
   {
     TIME_MEASURE_START(miner_tx_handle_time);
-    process_new_transaction(b.miner_tx, height);
+    process_new_transaction(
+        b.miner_tx
+      , height
+      , callbacks
+      );
     TIME_MEASURE_FINISH(miner_tx_handle_time);
 
     TIME_MEASURE_START(txs_handle_time);
@@ -327,7 +324,11 @@ void wallet2::process_new_blockchain_entry(
       {
         throw error::tx_parse_error { LOCATION_TAG };
       }
-      process_new_transaction(tx, height);
+      process_new_transaction(
+          tx
+        , height
+        , callbacks
+        );
     }
     TIME_MEASURE_FINISH(txs_handle_time);
     LOG_PRINT_L2(
@@ -345,10 +346,7 @@ void wallet2::process_new_blockchain_entry(
   }
   m_blockchain.push_back(bl_id);
 
-  if (nullptr != m_callback)
-  {
-    m_callback->on_new_block(height, b);
-  }
+  callbacks.on_new_block(height, b);
 }
 
 void wallet2::get_short_chain_history(
@@ -387,7 +385,10 @@ void wallet2::get_short_chain_history(
   }
 }
 
-size_t wallet2::pull_blocks(uint64_t start_height)
+size_t wallet2::pull_blocks(
+    uint64_t start_height
+  , i_wallet2_callback const & callbacks
+  )
 {
   size_t num_blocks_added = 0;
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::request req {};
@@ -426,7 +427,13 @@ size_t wallet2::pull_blocks(uint64_t start_height)
     crypto::hash bl_id = get_block_hash(bl);
     if(current_index >= m_blockchain.size())
     {
-      process_new_blockchain_entry(bl, bl_entry, bl_id, current_index);
+      process_new_blockchain_entry(
+          bl
+        , bl_entry
+        , bl_id
+        , current_index
+        , callbacks
+        );
       ++num_blocks_added;
     }
     else if(bl_id != m_blockchain[current_index])
@@ -443,7 +450,13 @@ size_t wallet2::pull_blocks(uint64_t start_height)
       }
 
       detach_blockchain(current_index);
-      process_new_blockchain_entry(bl, bl_entry, bl_id, current_index);
+      process_new_blockchain_entry(
+          bl
+        , bl_entry
+        , bl_id
+        , current_index
+        , callbacks
+        );
     }
     else
     {
@@ -456,7 +469,10 @@ size_t wallet2::pull_blocks(uint64_t start_height)
   return num_blocks_added;
 }
 
-size_t wallet2::refresh(uint64_t start_height)
+size_t wallet2::refresh(
+    uint64_t start_height
+  , i_wallet2_callback const & callbacks
+  )
 {
   size_t blocks_fetched = 0;
   size_t try_count = 0;
@@ -465,7 +481,7 @@ size_t wallet2::refresh(uint64_t start_height)
   {
     try
     {
-      size_t added_blocks = pull_blocks(start_height);
+      size_t added_blocks = pull_blocks(start_height, callbacks);
       blocks_fetched += added_blocks;
       if(0 == added_blocks)
       {
