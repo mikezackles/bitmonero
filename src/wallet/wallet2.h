@@ -134,18 +134,6 @@ public:
 
   uint64_t unlocked_balance();
 
-  void transfer(
-      std::vector<cryptonote::tx_destination_entry> const & dsts
-    , size_t fake_outputs_count
-    , uint64_t unlock_time
-    , uint64_t fee
-    , std::vector<uint8_t> const & extra
-    , transaction_splitting::strategy destination_split_strategy
-    , tx_dust_policy const & dust_policy
-    , cryptonote::transaction& tx
-    , pending_tx& ptx
-    );
-
   void commit_tx(pending_tx& ptx_vector);
 
   void commit_tx(std::vector<pending_tx>& ptx_vector);
@@ -211,6 +199,17 @@ public:
     );
 
 private:
+  void transfer(
+      std::vector<cryptonote::tx_destination_entry> const & dsts
+    , size_t fake_outputs_count
+    , uint64_t unlock_time
+    , uint64_t fee
+    , std::vector<uint8_t> const & extra
+    , transaction_splitting::strategy destination_split_strategy
+    , tx_dust_policy const & dust_policy
+    , cryptonote::transaction& tx
+    , pending_tx& ptx
+    );
 
   void process_new_transaction(
       cryptonote::transaction const & tx
