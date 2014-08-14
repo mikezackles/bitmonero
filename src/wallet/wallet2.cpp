@@ -560,7 +560,7 @@ crypto::secret_key wallet2::generate(
   )
 {
   clear();
-  m_keys_file = wallet_ + ".keys";
+  std::string keys_file = wallet_ + ".keys";
   m_wallet_file = wallet_;
 
   boost::system::error_code ignored_ec;
@@ -568,9 +568,9 @@ crypto::secret_key wallet2::generate(
   {
     throw error::file_exists_error { LOCATION_TAG, m_wallet_file };
   }
-  else if (boost::filesystem::exists(m_keys_file, ignored_ec))
+  else if (boost::filesystem::exists(keys_file, ignored_ec))
   {
-    throw error::file_exists_error { LOCATION_TAG, m_keys_file };
+    throw error::file_exists_error { LOCATION_TAG, keys_file };
   }
 
   crypto::secret_key new_recovery_key;
@@ -591,9 +591,9 @@ crypto::secret_key wallet2::generate(
 
   m_account_public_address = m_core_data.m_keys.m_account_address;
 
-  if (store_keys_to_file(m_keys_file, password, m_core_data))
+  if (store_keys_to_file(keys_file, password, m_core_data))
   {
-    throw error::file_save_error { LOCATION_TAG, m_keys_file };
+    throw error::file_save_error { LOCATION_TAG, keys_file };
   }
 
   bool r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
@@ -657,16 +657,16 @@ void wallet2::load(
 {
   clear();
   m_wallet_file = wallet_;
-  m_keys_file = wallet_ + ".keys";
+  std::string keys_file = wallet_ + ".keys";
 
   boost::system::error_code e;
-  bool exists = boost::filesystem::exists(m_keys_file, e);
+  bool exists = boost::filesystem::exists(keys_file, e);
   if (e || !exists)
   {
-    throw error::file_not_found_error { LOCATION_TAG, m_keys_file };
+    throw error::file_not_found_error { LOCATION_TAG, keys_file };
   }
 
-  auto const & maybe = load_keys_from_file(m_keys_file, password);
+  auto const & maybe = load_keys_from_file(keys_file, password);
   if (auto * p_core_data = boost::get<cryptonote::core_account_data>(&maybe))
   {
     m_core_data = std::move(*p_core_data);
@@ -674,7 +674,7 @@ void wallet2::load(
   else
   {
     // TODO - this is a catch-all for now
-    throw error::file_read_error { LOCATION_TAG, m_keys_file };
+    throw error::file_read_error { LOCATION_TAG, keys_file };
   }
   LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_core_data.m_keys.m_account_address.base58());
 
@@ -696,7 +696,7 @@ void wallet2::load(
    || m_account_public_address.m_view_public_key  != m_core_data.m_keys.m_account_address.m_view_public_key
    )
   {
-    throw error::mismatched_files { LOCATION_TAG, m_wallet_file + ", " + m_keys_file };
+    throw error::mismatched_files { LOCATION_TAG, m_wallet_file + ", " + keys_file };
   }
 
   if(m_blockchain.empty())

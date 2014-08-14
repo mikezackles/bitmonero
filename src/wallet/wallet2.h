@@ -71,7 +71,6 @@ private:
   uint64_t m_account_creation_timestamp; // not accurate for recovered accounts
   std::string m_daemon_address;
   std::string m_wallet_file;
-  std::string m_keys_file;
   epee::net_utils::http::http_simple_client m_http_client;
   std::vector<crypto::hash> m_blockchain;
   std::unordered_map<crypto::hash, unconfirmed_transfer_details> m_unconfirmed_txs;
