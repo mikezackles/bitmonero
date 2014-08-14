@@ -36,7 +36,6 @@
 #include "wallet/tx_dust_policy.h"
 #include "wallet/payment_details.h"
 #include "wallet/pending_tx.h"
-#include "wallet/keys_file_data.h"
 #include "wallet/unconfirmed_transfer_details.h"
 
 #include <memory>
@@ -45,7 +44,6 @@
 #include <atomic>
 
 #include "include_base_utils.h"
-#include "cryptonote_core/account.h"
 #include "cryptonote_core/account_boost_serialization.h"
 #include "cryptonote_core/cryptonote_basic_impl.h"
 #include "net/http_client.h"
@@ -220,16 +218,6 @@ public:
     );
 
 private:
-
-  bool store_keys_to_file(
-      std::string const & keys_file_name
-    , std::string const & password
-    );
-
-  void load_keys_from_file(
-      std::string const & keys_file_name
-    , std::string const & password
-    );
 
   void process_new_transaction(
       cryptonote::transaction const & tx

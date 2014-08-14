@@ -45,6 +45,8 @@
 #include "serialization/binary_utils.h"
 #include "cryptonote_protocol/blobdatatype.h"
 #include "crypto/electrum-words.h"
+#include "wallet/keys_serialization.h"
+#include "cryptonote_core/account.h"
 
 extern "C"
 {
@@ -521,77 +523,6 @@ bool wallet2::clear()
   return true;
 }
 
-bool wallet2::store_keys_to_file(
-    std::string const & keys_file_name
-  , std::string const & password
-  )
-{
-  std::string account_data;
-  bool r = epee::serialization::store_t_to_binary(m_core_data, account_data);
-  CHECK_AND_ASSERT_MES(r, false, "failed to serialize wallet keys");
-  keys_file_data file_data {};
-
-  crypto::chacha8_key key;
-  crypto::generate_chacha8_key(password, key);
-  std::string cipher;
-  cipher.resize(account_data.size());
-  file_data.iv = crypto::rand<crypto::chacha8_iv>();
-  crypto::chacha8(account_data.data(), account_data.size(), key, file_data.iv, &cipher[0]);
-  file_data.account_data = cipher;
-
-  std::string buf;
-  r = ::serialization::dump_binary(file_data, buf);
-  r = r && epee::file_io_utils::save_string_to_file(keys_file_name, buf); //and never touch wallet_keys_file again, only read
-  CHECK_AND_ASSERT_MES(r, false, "failed to generate wallet keys file " << keys_file_name);
-
-  return true;
-}
-
-namespace
-{
-  bool verify_keys(
-      crypto::secret_key const & sec
-    , crypto::public_key const & expected_pub
-    )
-  {
-    crypto::public_key pub;
-    bool r = crypto::secret_key_to_public_key(sec, pub);
-    return r && expected_pub == pub;
-  }
-}
-
-void wallet2::load_keys_from_file(
-    std::string const & keys_file_name
-  , std::string const & password
-  )
-{
-  keys_file_data file_data;
-  std::string buf;
-  if (!epee::file_io_utils::load_file_to_string(keys_file_name, buf))
-  {
-    throw error::file_read_error { LOCATION_TAG, keys_file_name };
-  }
-  else if (!::serialization::parse_binary(buf, file_data))
-  {
-    throw error::internal_error { LOCATION_TAG, "failed to deserialize \"" + keys_file_name + '\"' };
-  }
-
-  crypto::chacha8_key key;
-  crypto::generate_chacha8_key(password, key);
-  std::string account_data;
-  account_data.resize(file_data.account_data.size());
-  crypto::chacha8(file_data.account_data.data(), file_data.account_data.size(), key, file_data.iv, &account_data[0]);
-
-  bool r;
-  r = epee::serialization::load_t_from_binary(m_core_data, account_data);
-  r = r && verify_keys(m_core_data.m_keys.m_view_secret_key,  m_core_data.m_keys.m_account_address.m_view_public_key);
-  r = r && verify_keys(m_core_data.m_keys.m_spend_secret_key, m_core_data.m_keys.m_account_address.m_spend_public_key);
-  if (!r)
-  {
-    throw error::invalid_password { LOCATION_TAG };
-  }
-}
-
 crypto::secret_key wallet2::generate(
     std::string const & wallet_
   , std::string const & password
@@ -617,28 +548,27 @@ crypto::secret_key wallet2::generate(
   crypto::secret_key new_recovery_key;
   if (recover)
   {
-    m_core_data = recover_account(recovery_key);
+    m_core_data = cryptonote::recover_account(recovery_key);
   }
   else if (deterministic)
   {
-    recoverable_account account = create_recoverable_account();
+    recoverable_account account = cryptonote::create_recoverable_account();
     m_core_data = account.m_core_data;
     new_recovery_key = account.m_recovery_key;
   }
   else
   {
-    m_core_data = create_unrecoverable_account();
+    m_core_data = cryptonote::create_unrecoverable_account();
   }
 
   m_account_public_address = m_core_data.m_keys.m_account_address;
 
-  bool r = store_keys_to_file(m_keys_file, password);
-  if (!r)
+  if (store_keys_to_file(m_keys_file, password, m_core_data))
   {
     throw error::file_save_error { LOCATION_TAG, m_keys_file };
   }
 
-  r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
+  bool r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
   if(!r) LOG_PRINT_RED_L0("String with address text not saved");
 
   store();
@@ -708,7 +638,16 @@ void wallet2::load(
     throw error::file_not_found_error { LOCATION_TAG, m_keys_file };
   }
 
-  load_keys_from_file(m_keys_file, password);
+  auto const & maybe = load_keys_from_file(m_keys_file, password);
+  if (auto * p_core_data = boost::get<cryptonote::core_account_data>(&maybe))
+  {
+    m_core_data = std::move(*p_core_data);
+  }
+  else
+  {
+    // TODO - this is a catch-all for now
+    throw error::file_read_error { LOCATION_TAG, m_keys_file };
+  }
   LOG_PRINT_L0("Loaded wallet keys file, with public address: " << m_core_data.m_keys.m_account_address.base58());
 
   //keys loaded ok!

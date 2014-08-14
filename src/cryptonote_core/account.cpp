@@ -63,10 +63,7 @@ recoverable_account create_recoverable_account()
     );
 
   return recoverable_account {
-    core_account_data {
-        std::move(keys)
-      , static_cast<uint64_t>(time(nullptr))
-    }
+      core_account_data { std::move(keys), static_cast<uint64_t>(time(nullptr)) }
     , std::move(recovery_key)
   };
 }

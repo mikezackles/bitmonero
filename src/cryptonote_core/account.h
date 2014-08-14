@@ -56,9 +56,7 @@ struct core_account_data
   uint64_t m_creation_timestamp;
 
   template <class T_archive>
-  void serialize(
-      T_archive & archive
-    )
+  void serialize(T_archive & archive)
   {
     archive & m_keys;
     archive & m_creation_timestamp;
