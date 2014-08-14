@@ -75,7 +75,11 @@ namespace
           indexes += boost::to_string(s_e.first) + " ";
         }
       );
-    LOG_PRINT_L0("amount=" << cryptonote::print_money(src.amount) << ", real_output=" <<src.real_output << ", real_output_in_tx_index=" << src.real_output_in_tx_index << ", indexes: " << indexes);
+    LOG_PRINT_L0(
+        "amount=" << cryptonote::print_money(src.amount)
+     << ", real_output=" <<src.real_output << ", real_output_in_tx_index="
+     << src.real_output_in_tx_index << ", indexes: " << indexes
+     );
   }
 }
 
@@ -227,7 +231,13 @@ void wallet2::process_new_transaction(
       td.m_tx = tx;
       td.m_spent = false;
       cryptonote::keypair in_ephemeral;
-      cryptonote::generate_key_image_helper(m_core_data.m_keys, incoming_public_key, local_index, in_ephemeral, td.m_key_image);
+      cryptonote::generate_key_image_helper(
+          m_core_data.m_keys
+        , incoming_public_key
+        , local_index
+        , in_ephemeral
+        , td.m_key_image
+        );
 
       if (in_ephemeral.pub != boost::get<cryptonote::txout_to_key>(tx.vout[local_index].target).key)
       {
@@ -256,7 +266,10 @@ void wallet2::process_new_transaction(
     auto it = m_key_images.find(boost::get<cryptonote::txin_to_key>(in).k_image);
     if(it != m_key_images.end())
     {
-      LOG_PRINT_L0("Spent money: " << print_money(boost::get<cryptonote::txin_to_key>(in).amount) << ", with tx: " << get_transaction_hash(tx));
+      LOG_PRINT_L0(
+          "Spent money: " << print_money(boost::get<cryptonote::txin_to_key>(in).amount)
+       << ", with tx: " << get_transaction_hash(tx)
+       );
       money_spent += boost::get<cryptonote::txin_to_key>(in).amount;
       transfer_details& td = m_transfers[it->second];
       td.m_spent = true;
@@ -298,7 +311,8 @@ void wallet2::process_new_blockchain_entry(
 {
   //handle transactions from new block
 
-  //optimization: seeking only for blocks that are not older then the wallet creation time plus 1 day. 1 day is for possible user incorrect time setup
+  //optimization: seeking only for blocks that are not older then the wallet
+  //creation time plus 1 day. 1 day is for possible user incorrect time setup
   if(b.timestamp + 60*60*24 > m_account_creation_timestamp)
   {
     TIME_MEASURE_START(miner_tx_handle_time);
@@ -316,11 +330,18 @@ void wallet2::process_new_blockchain_entry(
       process_new_transaction(tx, height);
     }
     TIME_MEASURE_FINISH(txs_handle_time);
-    LOG_PRINT_L2("Processed block: " << bl_id << ", height " << height << ", " <<  miner_tx_handle_time + txs_handle_time << "(" << miner_tx_handle_time << "/" << txs_handle_time <<")ms");
+    LOG_PRINT_L2(
+        "Processed block: " << bl_id << ", height " << height << ", "
+     <<  miner_tx_handle_time + txs_handle_time << "("
+     << miner_tx_handle_time << "/" << txs_handle_time <<")ms"
+     );
   }
   else
   {
-    LOG_PRINT_L2( "Skipped block by timestamp, height: " << height << ", block time " << b.timestamp << ", account time " << m_account_creation_timestamp);
+    LOG_PRINT_L2(
+        "Skipped block by timestamp, height: " << height << ", block time "
+     << b.timestamp << ", account time " << m_account_creation_timestamp
+     );
   }
   m_blockchain.push_back(bl_id);
 
@@ -475,7 +496,11 @@ void wallet2::detach_blockchain(uint64_t height)
   LOG_PRINT_L0("Detaching blockchain on height " << height);
   size_t transfers_detached = 0;
 
-  auto it = std::find_if(m_transfers.begin(), m_transfers.end(), [&](const transfer_details& td){return td.m_block_height >= height;});
+  auto it = std::find_if(
+      m_transfers.begin()
+    , m_transfers.end()
+    , [&](const transfer_details& td) { return td.m_block_height >= height; }
+    );
   size_t i_start = it - m_transfers.begin();
 
   for(size_t i = i_start; i!= m_transfers.size();i++)
@@ -505,7 +530,10 @@ void wallet2::detach_blockchain(uint64_t height)
     }
   }
 
-  LOG_PRINT_L0("Detached blockchain on height " << height << ", transfers detached " << transfers_detached << ", blocks detached " << blocks_detached);
+  LOG_PRINT_L0(
+      "Detached blockchain on height " << height << ", transfers detached "
+   << transfers_detached << ", blocks detached " << blocks_detached
+   );
 }
 
 bool wallet2::deinit()
