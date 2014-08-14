@@ -101,7 +101,7 @@ boost::optional<std::string> wallet2::get_seed()
 void wallet2::process_new_transaction(
     cryptonote::transaction const & tx
   , uint64_t height
-  , i_wallet2_callback const & callbacks
+  , t_account_callbacks const & callbacks
   )
 {
   // Remove this transaction from the list of unconfirmed transactions if it is
@@ -278,7 +278,7 @@ void wallet2::process_new_blockchain_entry(
   , cryptonote::block_complete_entry & bche
   , crypto::hash & bl_id
   , uint64_t height
-  , i_wallet2_callback const & callbacks
+  , t_account_callbacks const & callbacks
   )
 {
   //handle transactions from new block
@@ -366,7 +366,7 @@ void wallet2::get_short_chain_history(
 
 size_t wallet2::pull_blocks(
     uint64_t start_height
-  , i_wallet2_callback const & callbacks
+  , t_account_callbacks const & callbacks
   )
 {
   size_t num_blocks_added = 0;
@@ -450,7 +450,7 @@ size_t wallet2::pull_blocks(
 
 size_t wallet2::refresh(
     uint64_t start_height
-  , i_wallet2_callback const & callbacks
+  , t_account_callbacks const & callbacks
   )
 {
   size_t blocks_fetched = 0;

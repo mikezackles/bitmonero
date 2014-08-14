@@ -47,7 +47,7 @@
 #include "version.h"
 #include "crypto/crypto.h"  // for crypto::secret_key definition
 #include "crypto/electrum-words.h"
-#include "wallet/i_wallet2_callback.h"
+#include "wallet/account_callbacks.h"
 
 #if defined(WIN32)
 #include <crtdbg.h>
@@ -656,7 +656,7 @@ bool simple_wallet::refresh(const std::vector<std::string>& args)
     namespace ph = std::placeholders;
     size_t fetched_blocks = m_wallet->refresh(
         start_height
-      , tools::i_wallet2_callback {
+      , tools::t_account_callbacks {
           std::bind(&simple_wallet::on_new_block, this, ph::_1, ph::_2)
         , std::bind(&simple_wallet::on_money_received, this, ph::_1, ph::_2, ph::_3)
         , std::bind(&simple_wallet::on_money_spent, this, ph::_1, ph::_2, ph::_3, ph::_4)

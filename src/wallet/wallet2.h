@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "wallet/i_wallet2_callback.h"
+#include "wallet/account_callbacks.h"
 #include "wallet/transfer_container.h"
 #include "wallet/transfer_details.h"
 #include "wallet/tx_dust_policy.h"
@@ -126,7 +126,7 @@ public:
 
   size_t refresh(
       uint64_t start_height
-    , i_wallet2_callback const & callbacks = i_wallet2_callback {}
+    , t_account_callbacks const & callbacks = t_account_callbacks {}
     );
 
   uint64_t balance();
@@ -213,7 +213,7 @@ private:
   void process_new_transaction(
       cryptonote::transaction const & tx
     , uint64_t height
-    , i_wallet2_callback const & callbacks
+    , t_account_callbacks const & callbacks
     );
 
   void process_new_blockchain_entry(
@@ -221,7 +221,7 @@ private:
     , cryptonote::block_complete_entry & bche
     , crypto::hash & bl_id
     , uint64_t height
-    , i_wallet2_callback const & callbacks
+    , t_account_callbacks const & callbacks
     );
 
   void detach_blockchain(uint64_t height);
@@ -236,7 +236,7 @@ private:
 
   size_t pull_blocks(
       uint64_t start_height
-    , i_wallet2_callback const & callbacks
+    , t_account_callbacks const & callbacks
     );
 
   uint64_t select_transfers(

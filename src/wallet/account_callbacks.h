@@ -6,7 +6,7 @@
 namespace tools
 {
 
-struct i_wallet2_callback
+struct t_account_callbacks
 {
   typedef std::function<void(
       uint64_t height
@@ -36,7 +36,7 @@ struct i_wallet2_callback
   t_on_money_spent_callback const on_money_spent;
   t_on_skip_transaction_callback const on_skip_transaction;
 
-  i_wallet2_callback(
+  t_account_callbacks(
       t_on_new_block_callback on_new_block_callback = [](uint64_t, cryptonote::block const &) {}
     , t_on_money_received_callback on_money_received_callback = [](uint64_t, cryptonote::transaction const &, size_t) {}
     , t_on_money_spent_callback on_money_spent_callback = [](uint64_t, cryptonote::transaction const &, size_t, cryptonote::transaction const &) {}

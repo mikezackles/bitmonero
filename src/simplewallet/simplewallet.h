@@ -93,7 +93,7 @@ namespace cryptonote
     bool try_connect_to_daemon();
     bool ask_wallet_create_if_needed();
 
-    //----------------- i_wallet2_callback ---------------------
+    //----------------- account_callbacks ---------------------
     void on_new_block(uint64_t height, const cryptonote::block& block);
     void on_money_received(uint64_t height, const cryptonote::transaction& tx, size_t out_index);
     void on_money_spent(uint64_t height, const cryptonote::transaction& in_tx, size_t out_index, const cryptonote::transaction& spend_tx);
