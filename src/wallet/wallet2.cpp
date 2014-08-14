@@ -53,8 +53,6 @@ extern "C"
 #include "crypto/keccak.h"
 #include "crypto/crypto-ops.h"
 }
-using namespace cryptonote;
-using namespace epee;
 
 namespace tools
 {
@@ -137,7 +135,7 @@ void wallet2::process_new_transaction(
 
   // Get the public key for the incoming transaction or skip the transaction if
   // there isn't one
-  std::vector<tx_extra_field> tx_extra_fields;
+  std::vector<cryptonote::tx_extra_field> tx_extra_fields;
   crypto::public_key incoming_public_key;
   {
     if(!parse_tx_extra(tx.extra, tx_extra_fields))
@@ -147,7 +145,7 @@ void wallet2::process_new_transaction(
       LOG_PRINT_L0("Transaction extra has unsupported format: " << get_transaction_hash(tx));
     }
 
-    tx_extra_pub_key public_key_field;
+    cryptonote::tx_extra_pub_key public_key_field;
     if(!find_tx_extra_field_by_type(tx_extra_fields, public_key_field))
     {
       LOG_PRINT_L0("Public key wasn't found in the transaction extra. Skipping transaction " << get_transaction_hash(tx));
@@ -178,7 +176,7 @@ void wallet2::process_new_transaction(
     cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::request request {};
     cryptonote::COMMAND_RPC_GET_TX_GLOBAL_OUTPUTS_INDEXES::response response {};
     request.txid = get_transaction_hash(tx);
-    if (!net_utils::invoke_http_bin_remote_command2(
+    if (!epee::net_utils::invoke_http_bin_remote_command2(
           m_daemon_address + "/get_o_indexes.bin"
         , request
         , response
@@ -244,7 +242,7 @@ void wallet2::process_new_transaction(
 
       // Record ownership of this transfer
       m_key_images[td.m_key_image] = m_transfers.size()-1;
-      LOG_PRINT_L0("Received money: " << print_money(td.amount()) << ", with tx: " << get_transaction_hash(tx));
+      LOG_PRINT_L0("Received money: " << cryptonote::print_money(td.amount()) << ", with tx: " << get_transaction_hash(tx));
       callbacks.on_money_received(height, td.m_tx, td.m_internal_output_index);
     }
   }
@@ -262,7 +260,7 @@ void wallet2::process_new_transaction(
     if(it != m_key_images.end())
     {
       LOG_PRINT_L0(
-          "Spent money: " << print_money(boost::get<cryptonote::txin_to_key>(in).amount)
+          "Spent money: " << cryptonote::print_money(boost::get<cryptonote::txin_to_key>(in).amount)
        << ", with tx: " << get_transaction_hash(tx)
        );
       money_spent += boost::get<cryptonote::txin_to_key>(in).amount;
@@ -273,14 +271,14 @@ void wallet2::process_new_transaction(
   }
 
   // Record a record of the payment if the transaction contains a payment_id
-  tx_extra_nonce extra_nonce;
+  cryptonote::tx_extra_nonce extra_nonce;
   if (find_tx_extra_field_by_type(tx_extra_fields, extra_nonce))
   {
     crypto::hash payment_id;
-    if(get_payment_id_from_tx_extra_nonce(extra_nonce.nonce, payment_id))
+    if(cryptonote::get_payment_id_from_tx_extra_nonce(extra_nonce.nonce, payment_id))
     {
       uint64_t received = (money_spent < money_received) ? money_received - money_spent : 0;
-      if (0 < received && null_hash != payment_id)
+      if (0 < received && cryptonote::null_hash != payment_id)
       {
         payment_details payment;
         payment.m_tx_hash      = cryptonote::get_transaction_hash(tx);
@@ -395,7 +393,7 @@ size_t wallet2::pull_blocks(
   cryptonote::COMMAND_RPC_GET_BLOCKS_FAST::response res {};
   get_short_chain_history(req.block_ids);
   req.start_height = start_height;
-  if (!net_utils::invoke_http_bin_remote_command2(
+  if (!epee::net_utils::invoke_http_bin_remote_command2(
         m_daemon_address + "/getblocks.bin"
       , req
       , res
@@ -443,9 +441,9 @@ size_t wallet2::pull_blocks(
       {
         throw error::internal_error {
             LOCATION_TAG
-          , "wrong daemon response: split starts from the first block in response " + string_tools::pod_to_hex(bl_id)
+          , "wrong daemon response: split starts from the first block in response " + epee::string_tools::pod_to_hex(bl_id)
           + " (height " + std::to_string(res.start_height) + "), local block id at this height: "
-          + string_tools::pod_to_hex(m_blockchain[current_index])
+          + epee::string_tools::pod_to_hex(m_blockchain[current_index])
         };
       }
 
@@ -460,7 +458,7 @@ size_t wallet2::pull_blocks(
     }
     else
     {
-      LOG_PRINT_L2("Block is already in blockchain: " << string_tools::pod_to_hex(bl_id));
+      LOG_PRINT_L2("Block is already in blockchain: " << epee::string_tools::pod_to_hex(bl_id));
     }
 
     ++current_index;
@@ -503,7 +501,11 @@ size_t wallet2::refresh(
     }
   }
 
-  LOG_PRINT_L1("Refresh done, blocks received: " << blocks_fetched << ", balance: " << print_money(balance()) << ", unlocked: " << print_money(unlocked_balance()));
+  LOG_PRINT_L1(
+      "Refresh done, blocks received: "
+    << blocks_fetched << ", balance: " << cryptonote::print_money(balance())
+    << ", unlocked: " << cryptonote::print_money(unlocked_balance())
+    );
   return blocks_fetched;
 }
 
@@ -596,7 +598,7 @@ crypto::secret_key wallet2::generate(
   }
   else if (deterministic)
   {
-    recoverable_account account = cryptonote::create_recoverable_account();
+    cryptonote::recoverable_account account = cryptonote::create_recoverable_account();
     m_core_data = account.m_core_data;
     new_recovery_key = account.m_recovery_key;
   }
@@ -612,7 +614,7 @@ crypto::secret_key wallet2::generate(
     throw error::file_save_error { LOCATION_TAG, keys_file };
   }
 
-  bool r = file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
+  bool r = epee::file_io_utils::save_string_to_file(m_wallet_file + ".address.txt", m_core_data.m_keys.m_account_address.base58());
   if(!r) LOG_PRINT_RED_L0("String with address text not saved");
 
   store();
@@ -657,8 +659,8 @@ bool wallet2::check_connection()
     return true;
   }
 
-  net_utils::http::url_content u;
-  net_utils::parse_url(m_daemon_address, u);
+  epee::net_utils::http::url_content u;
+  epee::net_utils::parse_url(m_daemon_address, u);
   if(!u.port)
   {
     u.port = RPC_DEFAULT_PORT;
@@ -793,7 +795,7 @@ void wallet2::get_payments(
 
 std::string wallet2::secret_view_key_as_hex()
 {
-  return string_tools::pod_to_hex(m_core_data.m_keys.m_view_secret_key);
+  return epee::string_tools::pod_to_hex(m_core_data.m_keys.m_view_secret_key);
 }
 
 std::string wallet2::get_account_address_base58()
@@ -1168,9 +1170,10 @@ void wallet2::commit_tx(
   }
 
   LOG_PRINT_L0("Transaction successfully sent. <" << get_transaction_hash(ptx.tx) << ">" << ENDL
-            << "Commission: " << print_money(ptx.fee+ptx.dust) << " (dust: " << print_money(ptx.dust) << ")" << ENDL
-            << "Balance: " << print_money(balance()) << ENDL
-            << "Unlocked: " << print_money(unlocked_balance()) << ENDL
+            << "Commission: " << cryptonote::print_money(ptx.fee+ptx.dust)
+            << " (dust: " << cryptonote::print_money(ptx.dust) << ")" << ENDL
+            << "Balance: " << cryptonote::print_money(balance()) << ENDL
+            << "Unlocked: " << cryptonote::print_money(unlocked_balance()) << ENDL
             << "Please, wait for confirmation for your balance to be unlocked.");
 }
 
