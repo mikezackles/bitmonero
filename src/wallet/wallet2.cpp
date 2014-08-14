@@ -554,11 +554,6 @@ void wallet2::detach_blockchain(uint64_t height)
    );
 }
 
-bool wallet2::deinit()
-{
-  return true;
-}
-
 bool wallet2::clear()
 {
   m_blockchain.clear();

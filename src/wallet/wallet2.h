@@ -116,8 +116,6 @@ public:
     , uint64_t upper_transaction_size_limit = ((CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE * 125) / 100) - CRYPTONOTE_COINBASE_BLOB_RESERVED_SIZE
     );
 
-  bool deinit();
-
   void stop()
   {
     m_run.store(false, std::memory_order_relaxed);

@@ -500,13 +500,6 @@ bool simple_wallet::open_wallet(const string &wallet_file, const std::string& pa
 //----------------------------------------------------------------------------------------------------
 bool simple_wallet::close_wallet()
 {
-  bool r = m_wallet->deinit();
-  if (!r)
-  {
-    fail_msg_writer() << "failed to deinit wallet";
-    return false;
-  }
-
   try
   {
     m_wallet->store();
@@ -1117,7 +1110,6 @@ int main(int argc, char* argv[])
     {
       w.process_command(command);
       w.stop();
-      w.deinit();
     }
     else
     {
@@ -1125,8 +1117,6 @@ int main(int argc, char* argv[])
         w.stop();
       });
       w.run();
-
-      w.deinit();
     }
   }
   return 0;
