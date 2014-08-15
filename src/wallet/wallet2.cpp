@@ -28,31 +28,17 @@
 //
 // Parts of this file are originally copyright (c) 2012-2013 The Cryptonote developers
 
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-
-#include <boost/utility/value_init.hpp>
-#include "include_base_utils.h"
-
-#include "wallet2.h"
-#include "cryptonote_core/cryptonote_format_utils.h"
-#include "rpc/core_rpc_server_commands_defs.h"
-#include "misc_language.h"
-#include "cryptonote_core/cryptonote_basic_impl.h"
 #include "common/boost_serialization_helper.h"
+#include "cryptonote_core/account_boost_serialization.h"
+#include "cryptonote_core/cryptonote_basic_impl.h"
+#include "cryptonote_core/cryptonote_format_utils.h"
 #include "profile_tools.h"
-#include "crypto/crypto.h"
-#include "serialization/binary_utils.h"
-#include "cryptonote_protocol/blobdatatype.h"
-#include "crypto/electrum-words.h"
+#include "rpc/core_rpc_server_commands_defs.h"
+#include "storages/http_abstract_invoke.h"
 #include "wallet/keys_serialization.h"
-#include "cryptonote_core/account.h"
-
-extern "C"
-{
-#include "crypto/keccak.h"
-#include "crypto/crypto-ops.h"
-}
+#include "wallet/wallet_errors.h"
+#include "wallet/wallet2.h"
+#include <boost/serialization/vector.hpp>
 
 namespace tools
 {

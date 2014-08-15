@@ -30,35 +30,20 @@
 
 #pragma once
 
+#include "net/http_client.h"
 #include "wallet/account_callbacks.h"
+#include "wallet/payment_details.h"
+#include "wallet/pending_tx.h"
+#include "wallet/transaction_splitting.h"
 #include "wallet/transfer_container.h"
 #include "wallet/transfer_details.h"
 #include "wallet/tx_dust_policy.h"
-#include "wallet/payment_details.h"
-#include "wallet/pending_tx.h"
 #include "wallet/unconfirmed_transfer_details.h"
 
-#include <memory>
-#include <boost/serialization/list.hpp>
-#include <boost/serialization/vector.hpp>
-#include <boost/optional/optional.hpp>
 #include <atomic>
-
-#include "include_base_utils.h"
-#include "cryptonote_core/account_boost_serialization.h"
-#include "cryptonote_core/cryptonote_basic_impl.h"
-#include "net/http_client.h"
-#include "storages/http_abstract_invoke.h"
-#include "rpc/core_rpc_server_commands_defs.h"
-#include "cryptonote_core/cryptonote_format_utils.h"
-#include "common/unordered_containers_boost_serialization.h"
-#include "crypto/chacha8.h"
-#include "crypto/hash.h"
-#include "wallet/transaction_splitting.h"
-
-#include "wallet_errors.h"
-
-#include <iostream>
+#include <boost/optional/optional.hpp>
+#include <boost/serialization/version.hpp>
+#include <unordered_map>
 
 namespace tools
 {

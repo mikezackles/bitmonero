@@ -30,9 +30,10 @@
 
 #pragma once
 
+#include "misc_log_ex.h"
+
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
-
 
 namespace tools
 {

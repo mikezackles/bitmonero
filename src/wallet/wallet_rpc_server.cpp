@@ -39,6 +39,7 @@ using namespace epee;
 #include "misc_language.h"
 #include "string_tools.h"
 #include "crypto/hash.h"
+#include "wallet/wallet_errors.h"
 
 namespace tools
 {
