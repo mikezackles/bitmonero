@@ -705,8 +705,7 @@ bool simple_wallet::show_incoming_transfers(const std::vector<std::string>& args
     }
   }
 
-  tools::transfer_container transfers;
-  m_wallet->get_transfers(transfers);
+  tools::transfer_container const & transfers = m_wallet->get_transfers();
 
   bool transfers_found = false;
   for (const auto& td : transfers)

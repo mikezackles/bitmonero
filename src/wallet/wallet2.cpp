@@ -728,11 +728,9 @@ uint64_t wallet2::balance()
   return amount;
 }
 
-void wallet2::get_transfers(
-    transfer_container & incoming_transfers
-  ) const
+transfer_container const & wallet2::get_transfers() const
 {
-  incoming_transfers = m_transfers;
+  return m_transfers;
 }
 
 void wallet2::get_payments(

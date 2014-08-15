@@ -375,8 +375,7 @@ namespace tools
       available = false;
     }
 
-    transfer_container transfers;
-    m_wallet.get_transfers(transfers);
+    transfer_container transfers = m_wallet.get_transfers();
 
     bool transfers_found = false;
     for (const auto& td : transfers)

@@ -132,7 +132,7 @@ public:
 
   bool check_connection();
 
-  void get_transfers(transfer_container & incoming_transfers) const;
+  transfer_container const & get_transfers() const;
 
   void get_payments(
       crypto::hash const & payment_id
