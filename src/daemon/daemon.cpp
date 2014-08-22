@@ -95,22 +95,22 @@ t_daemon::t_daemon(
 
 t_daemon::~t_daemon() = default;
 
-// MSVC is brain-dead and can't default this...
 t_daemon::t_daemon(t_daemon && other)
 {
   if (this != &other)
   {
     mp_internals = std::move(other.mp_internals);
+    m_parsed_command_line = std::move(other.m_parsed_command_line);
     other.mp_internals.reset(nullptr);
   }
 }
 
-// or this
 t_daemon & t_daemon::operator=(t_daemon && other)
 {
   if (this != &other)
   {
     mp_internals = std::move(other.mp_internals);
+    m_parsed_command_line = std::move(other.m_parsed_command_line);
     other.mp_internals.reset(nullptr);
   }
   return *this;
