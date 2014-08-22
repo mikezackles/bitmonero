@@ -30,15 +30,17 @@
 
 #include "daemon/daemon.h"
 
-#include "common/util.h"
 #include "daemon/core.h"
 #include "daemon/p2p.h"
 #include "daemon/protocol.h"
 #include "daemon/rpc.h"
 #include "misc_log_ex.h"
 #include "version.h"
+#include <boost/asio/io_service.hpp>
+#include <boost/asio/signal_set.hpp>
 #include <boost/program_options.hpp>
 #include <functional>
+#include <thread>
 
 namespace daemonize {
 
@@ -117,7 +119,14 @@ t_daemon & t_daemon::operator=(t_daemon && other)
 bool t_daemon::run()
 {
   // Install nonblocking signal handler
-  tools::signal_handler::install(std::bind(&daemonize::t_daemon::nonblocking_stop, this));
+  std::thread {
+    [this] {
+      boost::asio::io_service io_service;
+      boost::asio::signal_set signals {io_service, SIGINT, SIGTERM};
+      signals.async_wait(std::bind(&t_daemon::nonblocking_stop, this));
+      io_service.run();
+    }
+  }.detach();
 
   // Signal that the daemon is now running
   {
