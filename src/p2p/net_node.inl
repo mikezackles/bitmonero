@@ -375,7 +375,7 @@ namespace nodetool
   bool node_server<t_payload_net_handler>::send_stop_signal()
   {
     m_net_server.send_stop_signal();
-    LOG_PRINT_L0("[node] Stop signal sent");
+    LOG_PRINT_L0("P2P stop request processed");
     return true;
   }
   //-----------------------------------------------------------------------------------
