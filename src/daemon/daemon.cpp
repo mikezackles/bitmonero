@@ -65,6 +65,15 @@ public:
     m_core.set_protocol(m_protocol.get());
   }
 
+  static void init_options(
+      boost::program_options::options_description & option_spec
+    )
+  {
+    t_core::init_options(option_spec);
+    t_p2p::init_options(option_spec);
+    t_rpc::init_options(option_spec);
+  }
+
   void run()
   {
     m_core.run();
@@ -78,11 +87,11 @@ public:
   }
 };
 
-void t_daemon::init_options(boost::program_options::options_description & option_spec)
+void t_daemon::init_options(
+    boost::program_options::options_description & option_spec
+  )
 {
-  t_core::init_options(option_spec);
-  t_p2p::init_options(option_spec);
-  t_rpc::init_options(option_spec);
+  t_internals::init_options(option_spec);
 }
 
 t_daemon::t_daemon(
