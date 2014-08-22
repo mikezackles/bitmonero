@@ -84,9 +84,10 @@ void t_daemon::init_options(boost::program_options::options_description & option
 }
 
 t_daemon::t_daemon(
-    boost::program_options::variables_map const & vm
+    boost::program_options::variables_map parsed_command_line
   )
-  : mp_internals{new t_internals{vm}}
+  : mp_internals{nullptr}
+  , m_parsed_command_line{std::move(parsed_command_line)}
   , m_is_running{false}
 {}
 
@@ -115,58 +116,50 @@ t_daemon & t_daemon::operator=(t_daemon && other)
 
 bool t_daemon::run()
 {
-  // Install signal handler.  We don't want interrupts to block
+  // Install nonblocking signal handler
   tools::signal_handler::install(std::bind(&daemonize::t_daemon::nonblocking_stop, this));
 
+  // Signal that the daemon is now running
   {
     std::lock_guard<std::mutex> lock {m_mutex};
-    if (nullptr == mp_internals)
-    {
-      // The contents of mp_internals have already been destructed, so we're
-      // done!
-      return false;
-    }
-
-    // Signal that the daemon is now running
     m_is_running = true;
   }
 
+  // Initialize internals
+  mp_internals.reset(new t_internals {m_parsed_command_line});
+
+  // Run the daemonized code
+  bool success;
   try
   {
     mp_internals->run();
     LOG_PRINT("Node stopped.", LOG_LEVEL_0);
-    return true;
+    success = true;
   }
   catch (std::exception const & ex)
   {
     LOG_ERROR("Uncaught exception! " << ex.what());
+    success = false;
   }
   catch (...)
   {
     LOG_ERROR("Uncaught exception!");
+    success = false;
   }
+
+  // Ensure resources are cleaned up here.
+  mp_internals.reset(nullptr);
 
   // Signal that the daemon has stopped
   {
     std::lock_guard<std::mutex> lock {m_mutex};
     m_is_running = false;
-
-    // Ensure resources are cleaned up before we return.  We do this while
-    // holding the lock in an attempt to reliably inform t_daemon::run that the
-    // contents of mp_internals have been destructed in the case that
-    // t_daemon::run somehow gets called again.
-    mp_internals.reset(nullptr);
   }
 
-  return false;
+  return success;
 }
 
 void t_daemon::nonblocking_stop()
-{
-  mp_internals->stop();
-}
-
-void t_daemon::blocking_stop()
 {
   // Don't do anything if the daemon isn't running
   {
@@ -178,13 +171,16 @@ void t_daemon::blocking_stop()
   }
 
   mp_internals->stop();
+}
 
-  // Wait for mp_internals to finish running and then destruct its contents.
+void t_daemon::blocking_stop()
+{
+  nonblocking_stop();
+
+  // Wait for daemon to stop
   {
     std::unique_lock<std::mutex> lock {m_mutex};
-    LOG_PRINT_L0("START");
     m_condition_variable.wait(lock, [this] { return !m_is_running; });
-    LOG_PRINT_L0("FINISH");
   }
 }
 

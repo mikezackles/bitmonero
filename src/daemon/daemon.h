@@ -42,12 +42,13 @@ public:
   static void init_options(boost::program_options::options_description & option_spec);
 private:
   std::unique_ptr<t_internals> mp_internals;
+  boost::program_options::variables_map const m_parsed_command_line;
   std::condition_variable m_condition_variable;
   std::mutex m_mutex;
   bool m_is_running;
 public:
   t_daemon(
-      boost::program_options::variables_map const & vm
+      boost::program_options::variables_map parsed_command_line
     );
   t_daemon(t_daemon && other);
   t_daemon & operator=(t_daemon && other);
