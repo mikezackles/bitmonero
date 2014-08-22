@@ -30,6 +30,8 @@
 
 #include <memory>
 #include <boost/program_options.hpp>
+#include <condition_variable>
+#include <mutex>
 
 namespace daemonize {
 
@@ -40,6 +42,9 @@ public:
   static void init_options(boost::program_options::options_description & option_spec);
 private:
   std::unique_ptr<t_internals> mp_internals;
+  std::condition_variable m_condition_variable;
+  std::mutex m_mutex;
+  bool m_is_running;
 public:
   t_daemon(
       boost::program_options::variables_map const & vm
@@ -49,6 +54,7 @@ public:
   ~t_daemon();
 
   bool run();
-  void stop();
+  void nonblocking_stop();
+  void blocking_stop();
 };
 }

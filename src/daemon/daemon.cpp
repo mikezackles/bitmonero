@@ -39,29 +39,40 @@
 #include "version.h"
 #include <boost/program_options.hpp>
 #include <functional>
-#include <memory>
 
 namespace daemonize {
 
-struct t_internals {
+class t_internals {
 private:
-  t_protocol protocol;
-public:
-  t_core core;
-  t_p2p p2p;
-  t_rpc rpc;
+  t_protocol m_protocol;
+  t_core m_core;
+  t_p2p m_p2p;
+  t_rpc m_rpc;
 
+public:
   t_internals(
       boost::program_options::variables_map const & vm
     )
-    : core{vm}
-    , protocol{vm, core}
-    , p2p{vm, protocol}
-    , rpc{vm, core, p2p}
+    : m_core{vm}
+    , m_protocol{vm, m_core}
+    , m_p2p{vm, m_protocol}
+    , m_rpc{vm, m_core, m_p2p}
   {
     // Handle circular dependencies
-    protocol.set_p2p_endpoint(p2p.get());
-    core.set_protocol(protocol.get());
+    m_protocol.set_p2p_endpoint(m_p2p.get());
+    m_core.set_protocol(m_protocol.get());
+  }
+
+  void run()
+  {
+    m_core.run();
+    m_rpc.run();
+    m_p2p.run();
+  }
+
+  void stop()
+  {
+    m_p2p.stop();
   }
 };
 
@@ -76,6 +87,7 @@ t_daemon::t_daemon(
     boost::program_options::variables_map const & vm
   )
   : mp_internals{new t_internals{vm}}
+  , m_is_running{false}
 {}
 
 t_daemon::~t_daemon() = default;
@@ -103,42 +115,77 @@ t_daemon & t_daemon::operator=(t_daemon && other)
 
 bool t_daemon::run()
 {
-  if (nullptr == mp_internals)
+  // Install signal handler.  We don't want interrupts to block
+  tools::signal_handler::install(std::bind(&daemonize::t_daemon::nonblocking_stop, this));
+
   {
-    throw std::runtime_error{"Can't run stopped daemon"};
+    std::lock_guard<std::mutex> lock {m_mutex};
+    if (nullptr == mp_internals)
+    {
+      // The contents of mp_internals have already been destructed, so we're
+      // done!
+      return false;
+    }
+
+    // Signal that the daemon is now running
+    m_is_running = true;
   }
-  tools::signal_handler::install(std::bind(&daemonize::t_daemon::stop, this));
 
   try
   {
-    mp_internals->core.run();
-    mp_internals->rpc.run();
-    mp_internals->p2p.run();
-    mp_internals->rpc.stop();
+    mp_internals->run();
     LOG_PRINT("Node stopped.", LOG_LEVEL_0);
     return true;
   }
   catch (std::exception const & ex)
   {
     LOG_ERROR("Uncaught exception! " << ex.what());
-    return false;
   }
   catch (...)
   {
     LOG_ERROR("Uncaught exception!");
-    return false;
   }
+
+  // Signal that the daemon has stopped
+  {
+    std::lock_guard<std::mutex> lock {m_mutex};
+    m_is_running = false;
+
+    // Ensure resources are cleaned up before we return.  We do this while
+    // holding the lock in an attempt to reliably inform t_daemon::run that the
+    // contents of mp_internals have been destructed in the case that
+    // t_daemon::run somehow gets called again.
+    mp_internals.reset(nullptr);
+  }
+
+  return false;
 }
 
-void t_daemon::stop()
+void t_daemon::nonblocking_stop()
 {
-  if (nullptr == mp_internals)
+  mp_internals->stop();
+}
+
+void t_daemon::blocking_stop()
+{
+  // Don't do anything if the daemon isn't running
   {
-    throw std::runtime_error{"Can't stop stopped daemon"};
+    std::lock_guard<std::mutex> lock {m_mutex};
+    if (!m_is_running)
+    {
+      return;
+    }
   }
-  mp_internals->p2p.stop();
-  mp_internals->rpc.stop();
-  mp_internals.reset(nullptr); // Ensure resources are cleaned up before we return
+
+  mp_internals->stop();
+
+  // Wait for mp_internals to finish running and then destruct its contents.
+  {
+    std::unique_lock<std::mutex> lock {m_mutex};
+    LOG_PRINT_L0("START");
+    m_condition_variable.wait(lock, [this] { return !m_is_running; });
+    LOG_PRINT_L0("FINISH");
+  }
 }
 
 } // namespace daemonize

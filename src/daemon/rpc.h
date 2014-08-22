@@ -75,17 +75,13 @@ public:
     LOG_PRINT_L0("Core rpc server started ok");
   }
 
-  void stop()
-  {
-    LOG_PRINT_L0("Stopping core rpc server...");
-    m_server.send_stop_signal();
-    m_server.timed_wait_server_stop(5000);
-  }
-
   ~t_rpc()
   {
     LOG_PRINT_L0("Deinitializing rpc server...");
     try {
+      LOG_PRINT_L0("Stopping core rpc server...");
+      m_server.send_stop_signal();
+      m_server.timed_wait_server_stop(5000);
       m_server.deinit();
     } catch (...) {
       LOG_PRINT_L0("Failed to deinitialize rpc server...");

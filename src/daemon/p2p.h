@@ -82,6 +82,7 @@ public:
 
   void stop()
   {
+    LOG_PRINT_L0("Stopping p2p net loop...");
     m_server.send_stop_signal();
   }
 

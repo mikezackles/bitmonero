@@ -137,7 +137,7 @@ namespace windows {
         case SERVICE_CONTROL_SHUTDOWN:
         case SERVICE_CONTROL_STOP:
           report_status(SERVICE_STOP_PENDING);
-          m_handler.stop();
+          m_handler.blocking_stop();
           report_status(SERVICE_STOPPED);
           break;
         case SERVICE_CONTROL_PAUSE:
