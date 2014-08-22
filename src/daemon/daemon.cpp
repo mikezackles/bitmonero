@@ -134,13 +134,13 @@ bool t_daemon::run()
     m_is_running = true;
   }
 
-  // Initialize internals
-  mp_internals.reset(new t_internals {m_parsed_command_line});
-
   // Run the daemonized code
   bool success;
   try
   {
+    // Initialize internals
+    mp_internals.reset(new t_internals {m_parsed_command_line});
+
     mp_internals->run();
     LOG_PRINT("Node stopped.", LOG_LEVEL_0);
     success = true;
