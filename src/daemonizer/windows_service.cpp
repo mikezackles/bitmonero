@@ -285,7 +285,7 @@ bool stop_service(
     return false;
   }
 
-  tools::success_msg_writer() << "Service stopped";
+  tools::success_msg_writer() << "Service stop requested";
 
   pause_to_display_admin_window_messages();
 
