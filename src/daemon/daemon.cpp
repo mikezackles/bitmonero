@@ -100,6 +100,7 @@ t_daemon::t_daemon(
   : mp_internals{nullptr}
   , m_parsed_command_line{std::move(parsed_command_line)}
   , m_is_running{false}
+  , m_stop_has_been_called{false}
 {}
 
 t_daemon::~t_daemon() = default;
@@ -127,7 +128,8 @@ t_daemon & t_daemon::operator=(t_daemon && other)
 
 bool t_daemon::run()
 {
-  // Install nonblocking signal handler
+  // Install signal handler.  This is unregistered after use, so a second
+  // interrupt should terminate the process without waiting.
   std::thread {
     [this] {
       boost::asio::io_service io_service;
@@ -149,6 +151,7 @@ bool t_daemon::run()
       std::lock_guard<std::mutex> lock {m_mutex};
       m_is_running = true;
     }
+    m_condition_variable.notify_one();
 
     mp_internals->run();
     LOG_PRINT("Node stopped.", LOG_LEVEL_0);
@@ -173,32 +176,42 @@ bool t_daemon::run()
     std::lock_guard<std::mutex> lock {m_mutex};
     m_is_running = false;
   }
+  m_condition_variable.notify_one();
 
   return success;
 }
 
-void t_daemon::nonblocking_stop()
+bool t_daemon::nonblocking_stop()
 {
-  // Don't do anything if the daemon isn't running
+  // Wait for the daemon to finish init, or abort if stop has already been
+  // called
   {
-    std::lock_guard<std::mutex> lock {m_mutex};
-    if (!m_is_running)
+    std::unique_lock<std::mutex> lock {m_mutex};
+    if (m_stop_has_been_called)
     {
-      return;
+      return false;;
     }
+    m_stop_has_been_called = true;
+    m_condition_variable.wait(lock, [this] { return m_is_running; });
   }
 
   mp_internals->stop();
+
+  return true;
 }
 
-void t_daemon::blocking_stop()
+bool t_daemon::blocking_stop()
 {
-  nonblocking_stop();
-
-  // Wait for daemon to stop
+  // Wait for daemon to stop if a stop method has not already been called
+  if (nonblocking_stop())
   {
     std::unique_lock<std::mutex> lock {m_mutex};
     m_condition_variable.wait(lock, [this] { return !m_is_running; });
+    return true;
+  }
+  else
+  {
+    return false;
   }
 }
 

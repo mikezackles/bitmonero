@@ -46,6 +46,7 @@ private:
   std::condition_variable m_condition_variable;
   std::mutex m_mutex;
   bool m_is_running;
+  bool m_stop_has_been_called;
 public:
   t_daemon(
       boost::program_options::variables_map parsed_command_line
@@ -55,7 +56,7 @@ public:
   ~t_daemon();
 
   bool run();
-  void nonblocking_stop();
-  void blocking_stop();
+  bool nonblocking_stop();
+  bool blocking_stop();
 };
 }
