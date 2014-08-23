@@ -7,7 +7,9 @@
 
 #include "daemonizer/windows_service.h"
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 #include <windows.h>
 
@@ -29,6 +31,7 @@ namespace windows {
     SERVICE_STATUS_HANDLE m_status_handle{nullptr};
     SERVICE_STATUS m_status{};
     std::string m_name;
+    std::mutex m_mutex;
     T_handler m_handler;
 
     static std::unique_ptr<t_service_runner<T_handler>> sp_instance;
@@ -88,6 +91,8 @@ namespace windows {
 
     void report_status(DWORD status)
     {
+      std::lock_guard<std::mutex> lock {m_mutex};
+
       m_status.dwCurrentState = status;
       if (status == SERVICE_RUNNING)
       {
@@ -136,8 +141,12 @@ namespace windows {
         case SERVICE_CONTROL_SHUTDOWN:
         case SERVICE_CONTROL_STOP:
           report_status(SERVICE_STOP_PENDING);
-          m_handler.blocking_stop();
-          report_status(SERVICE_STOPPED);
+          std::thread {
+            [this] {
+              m_handler.blocking_stop();
+              report_status(SERVICE_STOPPED);
+            }
+          }.detach();
           break;
         case SERVICE_CONTROL_PAUSE:
           break;
