@@ -168,6 +168,17 @@ bool t_daemon::run()
     success = false;
   }
 
+  // Ensure that the daemon is marked as running.  If there are stop methods
+  // waiting for the daemon, this will prevent them from hanging.
+  if (!success)
+  {
+    {
+      std::lock_guard<std::mutex> lock {m_mutex};
+      m_is_running = true;
+    }
+    m_condition_variable.notify_one();
+  }
+
   // Ensure resources are cleaned up here.
   mp_internals.reset(nullptr);
 
