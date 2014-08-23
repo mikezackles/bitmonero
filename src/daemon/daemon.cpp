@@ -137,18 +137,18 @@ bool t_daemon::run()
     }
   }.detach();
 
-  // Signal that the daemon is now running
-  {
-    std::lock_guard<std::mutex> lock {m_mutex};
-    m_is_running = true;
-  }
-
   // Run the daemonized code
   bool success;
   try
   {
     // Initialize internals
     mp_internals.reset(new t_internals {m_parsed_command_line});
+
+    // Signal that the daemon is now running
+    {
+      std::lock_guard<std::mutex> lock {m_mutex};
+      m_is_running = true;
+    }
 
     mp_internals->run();
     LOG_PRINT("Node stopped.", LOG_LEVEL_0);
