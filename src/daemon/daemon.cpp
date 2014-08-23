@@ -153,8 +153,9 @@ bool t_daemon::run()
     }
     m_condition_variable.notify_one();
 
+    // Run the daemon
     mp_internals->run();
-    LOG_PRINT("Node stopped.", LOG_LEVEL_0);
+
     success = true;
   }
   catch (std::exception const & ex)
@@ -198,14 +199,19 @@ bool t_daemon::nonblocking_stop()
   // called
   {
     std::unique_lock<std::mutex> lock {m_mutex};
+
+    // Abort if stop already called
     if (m_stop_has_been_called)
     {
       return false;;
     }
     m_stop_has_been_called = true;
+
+    // Wait until daemon is running
     m_condition_variable.wait(lock, [this] { return m_is_running; });
   }
 
+  // Ask the daemon to stop
   mp_internals->stop();
 
   return true;
@@ -213,17 +219,19 @@ bool t_daemon::nonblocking_stop()
 
 bool t_daemon::blocking_stop()
 {
-  // Wait for daemon to stop if a stop method has not already been called
-  if (nonblocking_stop())
-  {
-    std::unique_lock<std::mutex> lock {m_mutex};
-    m_condition_variable.wait(lock, [this] { return !m_is_running; });
-    return true;
-  }
-  else
+  // Ask the daemon to stop, or return on error.
+  if (!nonblocking_stop())
   {
     return false;
   }
+
+  // Wait for daemon to stop
+  {
+    std::unique_lock<std::mutex> lock {m_mutex};
+    m_condition_variable.wait(lock, [this] { return !m_is_running; });
+  }
+
+  return true;
 }
 
 } // namespace daemonize
