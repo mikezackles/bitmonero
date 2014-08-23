@@ -209,10 +209,11 @@ bool t_daemon::nonblocking_stop()
 
     // Wait until daemon is running
     m_condition_variable.wait(lock, [this] { return m_is_running; });
-  }
 
-  // Ask the daemon to stop
-  mp_internals->stop();
+    // Ask the daemon to stop.  We continue holding the lock to prevent
+    // mp_internals from being reset before we call stop()
+    mp_internals->stop();
+  }
 
   return true;
 }
