@@ -67,7 +67,13 @@ namespace cryptonote
   };
 
   //---------------------------------------------------------------
-  bool construct_tx(const account_keys& sender_account_keys, const std::vector<tx_source_entry>& sources, const std::vector<tx_destination_entry>& destinations, std::vector<uint8_t> extra, transaction& tx, uint64_t unlock_time);
+  bool construct_tx(
+      const account_keys& sender_account_keys
+    , const std::vector<tx_source_entry>& sources
+    , std::vector<tx_destination_entry> destinations
+    , std::vector<uint8_t> extra, transaction& tx
+    , uint64_t unlock_time
+    );
 
   template<typename T>
   bool find_tx_extra_field_by_type(const std::vector<tx_extra_field>& tx_extra_fields, T& field)
@@ -178,7 +184,12 @@ namespace cryptonote
   //---------------------------------------------------------------
   // 62387455827 -> 455827 + 7000000 + 80000000 + 300000000 + 2000000000 + 60000000000, where 455827 <= dust_threshold
   template<typename chunk_handler_t, typename dust_handler_t>
-  void decompose_amount_into_digits(uint64_t amount, uint64_t dust_threshold, const chunk_handler_t& chunk_handler, const dust_handler_t& dust_handler)
+  void decompose_amount_into_digits(
+      uint64_t amount
+    , uint64_t dust_threshold
+    , const chunk_handler_t& chunk_handler
+    , const dust_handler_t& dust_handler
+    )
   {
     if (0 == amount)
     {
