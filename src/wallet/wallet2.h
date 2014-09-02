@@ -171,7 +171,6 @@ namespace tools
       , const std::vector<uint8_t>& extra
       , T destination_split_strategy
       , const tx_dust_policy& dust_policy
-      , cryptonote::transaction& tx
       , pending_tx& ptx
       );
     void create_pending_transaction(
@@ -180,7 +179,6 @@ namespace tools
       , uint64_t unlock_time
       , uint64_t fee
       , const std::vector<uint8_t>& extra
-      , cryptonote::transaction& tx
       , pending_tx& ptx
       );
     void commit_tx(pending_tx& ptx_vector);
@@ -392,7 +390,6 @@ namespace tools
     , const std::vector<uint8_t>& extra
     , T destination_split_strategy
     , const tx_dust_policy& dust_policy
-    , cryptonote::transaction& tx
     , pending_tx &ptx
     )
   {
@@ -632,6 +629,7 @@ namespace tools
     }
 
     // Construct the actual transaction.
+    cryptonote::transaction tx;
     bool r = cryptonote::construct_tx(
         m_account.get_keys()
       , obfuscated_input_transfers

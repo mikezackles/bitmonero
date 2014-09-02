@@ -770,7 +770,6 @@ void wallet2::create_pending_transaction(
   , uint64_t unlock_time
   , uint64_t fee
   , const std::vector<uint8_t>& extra
-  , cryptonote::transaction& tx
   , pending_tx& ptx
   )
 {
@@ -782,7 +781,6 @@ void wallet2::create_pending_transaction(
     , extra
     , detail::digit_split_strategy
     , tx_dust_policy(fee)
-    , tx
     , ptx
     );
 }
@@ -907,9 +905,8 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
       // for each new destination vector (i.e. for each new tx)
       for (auto & dst_vector : split_values)
       {
-        cryptonote::transaction tx;
         pending_tx ptx;
-        create_pending_transaction(dst_vector, fake_outs_count, unlock_time, fee, extra, tx, ptx);
+        create_pending_transaction(dst_vector, fake_outs_count, unlock_time, fee, extra, ptx);
         ptx_vector.push_back(ptx);
 
         // mark transfers to be used as "spent"
