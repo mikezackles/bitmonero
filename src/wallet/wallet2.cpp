@@ -780,6 +780,53 @@ void wallet2::create_pending_transaction(
     );
 }
 //----------------------------------------------------------------------------------------------------
+bool wallet2::create_pending_transaction_with_per_kb_fee(
+    const std::vector<cryptonote::tx_destination_entry>& dsts
+  , size_t fake_outputs_count
+  , uint64_t unlock_time
+  , uint64_t fee_atomic_xmr_per_kb
+  , const std::vector<uint8_t>& extra
+  , pending_tx& ptx
+  )
+{
+  uint64_t const BYTES_PER_KB = 1 << 10;
+
+  uint64_t kb_multiplier = 1;
+
+  for (
+      uint8_t attempt_count = 0;
+      attempt_count < config::FEE_CALCULATION_MAX_RETRIES;
+      ++attempt_count
+    )
+  {
+    uint64_t fee = fee_atomic_xmr_per_kb * kb_multiplier;
+    create_pending_transaction(
+        dsts
+      , fake_outputs_count
+      , unlock_time
+      , fee
+      , extra
+      , detail::digit_split_strategy
+      , tx_dust_policy(fee)
+      , ptx
+      );
+
+    uint64_t size_in_bytes = get_object_blobsize(ptx.tx);
+    uint64_t true_kb_multiplier = size_in_bytes / BYTES_PER_KB;
+
+    if (kb_multiplier == true_kb_multiplier)
+    {
+      return true;
+    }
+    else
+    {
+      kb_multiplier = true_kb_multiplier;
+    }
+  }
+
+  return false;
+}
+//----------------------------------------------------------------------------------------------------
 
 namespace {
 // split_amounts(vector<cryptonote::tx_destination_entry> dsts, size_t num_splits)
