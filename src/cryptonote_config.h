@@ -126,3 +126,9 @@
 
 #define THREAD_STACK_SIZE                       5 * 1024 * 1024
 
+// New constants are intended to go here
+namespace config
+{
+  uint64_t const DEFAULT_FEE_ATOMIC_XMR_PER_KB = 500; // Just a placeholder!  Change me!
+  uint8_t const FEE_CALCULATION_MAX_RETRIES = 10;
+}
