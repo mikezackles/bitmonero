@@ -921,25 +921,31 @@ bool simple_wallet::transfer(const std::vector<std::string> &args_)
   try
   {
     // figure out what tx will be necessary
-    auto ptx_vector = m_wallet->create_transactions(dsts, fake_outs_count, 0 /* unlock_time */, DEFAULT_FEE, extra);
+    auto ptx_vector = m_wallet->create_transactions(
+        dsts
+      , fake_outs_count
+      , 0 /* unlock_time */
+      , config::DEFAULT_FEE_ATOMIC_XMR_PER_KB
+      , extra
+      );
 
-    // if more than one tx necessary, prompt user to confirm
-    if (ptx_vector.size() > 1)
+    uint64_t total_fee = 0;
+    for (auto ptx : ptx_vector)
     {
-        std::string prompt_str = "Your transaction needs to be split into ";
-        prompt_str += std::to_string(ptx_vector.size());
-        prompt_str += " transactions.  This will result in a fee of ";
-        prompt_str += print_money(ptx_vector.size() * DEFAULT_FEE);
-        prompt_str += ".  Is this okay?  (Y/Yes/N/No)";
-        std::string accepted = command_line::input_line(prompt_str);
-        if (accepted != "Y" && accepted != "y" && accepted != "Yes" && accepted != "yes")
-        {
-          fail_msg_writer() << "Transaction cancelled.";
+      total_fee += ptx.fee;
+    }
 
-          // would like to return false, because no tx made, but everything else returns true
-          // and I don't know what returning false might adversely affect.  *sigh*
-          return true; 
-        }
+    std::string prompt_str = "This operation will result in ";
+    prompt_str += std::to_string(ptx_vector.size());
+    prompt_str += " transactions.  This will result in a fee of ";
+    prompt_str += print_money(total_fee);
+    prompt_str += ".  Is this okay?  (Y/Yes/N/No)";
+    std::string accepted = command_line::input_line(prompt_str);
+    if (accepted != "Y" && accepted != "y" && accepted != "Yes" && accepted != "yes")
+    {
+      fail_msg_writer() << "Transaction cancelled.";
+
+      return false;
     }
 
     // actually commit the transactions
