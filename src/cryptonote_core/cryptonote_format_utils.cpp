@@ -742,16 +742,41 @@ namespace cryptonote
     return h;
   }
   //---------------------------------------------------------------
-  crypto::hash get_tx_tree_hash(const block& b)
+  crypto::hash get_tx_tree_hash(const block & a_block)
   {
-    std::vector<crypto::hash> txs_ids;
-    crypto::hash h = null_hash;
-    size_t bl_sz = 0;
-    get_transaction_hash(b.miner_tx, h, bl_sz);
-    txs_ids.push_back(h);
-    BOOST_FOREACH(auto& th, b.tx_hashes)
-      txs_ids.push_back(th);
-    return get_tx_tree_hash(txs_ids);
+    std::vector<crypto::hash> tx_hashes {};
+
+    // Add the miner tx hash to the list of hashes
+    crypto::hash result_hash {};
+    size_t unused = 0;
+    get_transaction_hash(a_block.miner_tx, result_hash, unused);
+    tx_hashes.push_back(result_hash);
+
+    // Add the hashes for the existing transactions
+    for (auto & tx_hash : a_block.tx_hashes)
+    {
+      tx_hashes.push_back(tx_hash);
+    }
+
+    // Fix historical anomalies
+    uint64_t height = get_block_height(a_block);
+    switch (height)
+    {
+    case 202612:
+      // These transactions may have the wrong hash because of a historical bug
+      // in tree_hash.  Here we explicitly use the correct hash.
+      epee::string_tools::hex_to_pod(
+          "d2d714c86291781bb86df24404754df7d9811025f659c34d3c67af3634b79da6"
+        , tx_hashes[513]
+        );
+      epee::string_tools::hex_to_pod(
+          "d59297784bfea414885d710918c1b91bce0568550cd1538311dd3f2c71edf570"
+        , tx_hashes[514]
+        );
+      break;
+    }
+
+    return get_tx_tree_hash(tx_hashes);
   }
   //---------------------------------------------------------------
 }
