@@ -35,6 +35,7 @@ using namespace epee;
 #include <boost/foreach.hpp>
 #include "cryptonote_config.h"
 #include "miner.h"
+#include "cryptonote_core/hardcoded_historical_tx_fixes.h"
 #include "crypto/crypto.h"
 #include "crypto/hash.h"
 
@@ -758,23 +759,11 @@ namespace cryptonote
       tx_hashes.push_back(tx_hash);
     }
 
-    // Fix historical anomalies
-    uint64_t height = get_block_height(a_block);
-    switch (height)
-    {
-    case 202612:
-      // These transactions may have the wrong hash because of a historical bug
-      // in tree_hash.  Here we explicitly use the correct hash.
-      epee::string_tools::hex_to_pod(
-          "d2d714c86291781bb86df24404754df7d9811025f659c34d3c67af3634b79da6"
-        , tx_hashes[513]
-        );
-      epee::string_tools::hex_to_pod(
-          "d59297784bfea414885d710918c1b91bce0568550cd1538311dd3f2c71edf570"
-        , tx_hashes[514]
-        );
-      break;
-    }
+    // Modify tx_hashes if necessary to account for historical hashing bugs
+    fix_historical_anomalies(
+        get_block_height(a_block)
+      , tx_hashes
+      );
 
     return get_tx_tree_hash(tx_hashes);
   }
