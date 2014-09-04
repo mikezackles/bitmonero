@@ -43,24 +43,36 @@ void tree_hash(const char (*hashes)[HASH_SIZE], size_t count, char *root_hash) {
     cn_fast_hash(hashes, 2 * HASH_SIZE, root_hash);
   } else {
     size_t i, j;
-    size_t cnt = count - 1;
+
+		assert( count >= 3); // cases for 0,1,2 are handled elsewhere
+		// Round down the count size: fun(2**n)= 2**(n-1) to round down to power of two
+		size_t tmp = count - 1;
+		size_t jj = 1; // (assigment will be optimized away by compiler)
+		for (jj=1 ; tmp != 0 ; ++jj) {
+			tmp /= 2; // dividing by 2 until to get how many powers of 2 fits size_to tmp.  will be optimized to tmp >> 2 by compiler if needed
+		}
+		size_t cnt = 2 << (jj-2); // cnt is the count, but rounded down to power of two
+		assert( cnt > 0 );	assert( cnt >= count/2 ); 	assert( cnt <= count );
+		size_t max_size_t = (size_t) -1; // max allowed value of size_t 
+		assert( cnt < max_size_t/2 ); // reasonable size to avoid any overflows. /2 is extra; Anyway should be limited much stronger by logical code 
+		// as we have sane limits on transactions counts in blockchain rules
+
     char (*ints)[HASH_SIZE];
-    for (i = 1; i < sizeof(size_t); i <<= 1) {
-      cnt |= cnt >> i;
-    }
-    cnt &= ~(cnt >> 1);
-    ints = alloca(cnt * HASH_SIZE);
+		size_t ints_size = cnt * HASH_SIZE;
+    ints = alloca(ints_size); 	memset( ints , 0 , ints_size);  // allocate, and zero out as extra protection for using unitialized mem
     memcpy(ints, hashes, (2 * cnt - count) * HASH_SIZE);
     for (i = 2 * cnt - count, j = 2 * cnt - count; j < cnt; i += 2, ++j) {
       cn_fast_hash(hashes[i], 64, ints[j]);
     }
     assert(i == count);
+
     while (cnt > 2) {
       cnt >>= 1;
       for (i = 0, j = 0; j < cnt; i += 2, ++j) {
         cn_fast_hash(ints[i], 64, ints[j]);
       }
     }
+
     cn_fast_hash(ints[0], 64, root_hash);
   }
 }
