@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
   LOG_PRINT_L0("Cryptonote protocol initialized OK");
 
   LOG_PRINT_L0("Initializing core rpc server...");
-  res = rpc_server.init(vm);
+  res = rpc_server.init(vm, testnet_mode);
   CHECK_AND_ASSERT_MES(res, 1, "Failed to initialize core rpc server.");
   LOG_PRINT_GREEN("Core rpc server initialized OK on port: " << rpc_server.get_binded_port(), LOG_LEVEL_0);
 
