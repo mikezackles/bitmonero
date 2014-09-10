@@ -92,6 +92,21 @@ namespace cryptonote
       return false;
     }
 
+    // Check that the transaction meets the minimum fee/size ratio
+    uint64_t fee = inputs_amount - outputs_amount;
+    uint64_t blob_size_kilobytes = blob_size >> 10;
+    uint64_t minimum_fee = config::DEFAULT_FEE_ATOMIC_XMR_PER_KB * blob_size_kilobytes;
+    if (fee < minimum_fee)
+    {
+      LOG_ERROR(
+          "transaction fee is too small: " << print_money(fee)
+       << ", size: " << blob_size_kilobytes << " kilobytes"
+       << ", minimum fee for this size: " << print_money(minimum_fee)
+       );
+      tvc.m_verifivation_failed = true;
+      return false;
+    }
+
     //check key images for transaction if it is not kept by block
     if(!kept_by_block)
     {
