@@ -232,9 +232,10 @@ namespace nodetool
   {
     if (testnet)
     {
-      add_hardcoded_seed_node(m_seed_nodes, "107.152.187.202:28080");
-      add_hardcoded_seed_node(m_seed_nodes, "197.242.158.240:28080");
-      add_hardcoded_seed_node(m_seed_nodes, "107.152.130.98:28080");
+      add_hardcoded_seed_node(m_seed_nodes, "192.168.0.23:28080");
+      //add_hardcoded_seed_node(m_seed_nodes, "107.152.187.202:28080");
+      //add_hardcoded_seed_node(m_seed_nodes, "197.242.158.240:28080");
+      //add_hardcoded_seed_node(m_seed_nodes, "107.152.130.98:28080");
     }
     else
     {
