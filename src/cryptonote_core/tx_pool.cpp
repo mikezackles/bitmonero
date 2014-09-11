@@ -94,7 +94,7 @@ namespace cryptonote
 
     // Check that the transaction meets the minimum fee/size ratio
     uint64_t fee = inputs_amount - outputs_amount;
-    uint64_t blob_size_kilobytes = blob_size >> 10;
+    uint64_t blob_size_kilobytes = (blob_size >> 10) + 1;
     uint64_t minimum_fee = config::DEFAULT_FEE_ATOMIC_XMR_PER_KB * blob_size_kilobytes;
     if (fee < minimum_fee)
     {

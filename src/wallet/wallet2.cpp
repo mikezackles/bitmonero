@@ -815,7 +815,7 @@ bool wallet2::create_pending_transaction_with_per_kb_fee(
       );
 
     uint64_t size_in_bytes = get_object_blobsize(ptx.tx);
-    uint64_t true_kb_multiplier = size_in_bytes >> 10;
+    uint64_t true_kb_multiplier = (size_in_bytes >> 10) + 1;
 
     if (kb_multiplier == true_kb_multiplier)
     {
