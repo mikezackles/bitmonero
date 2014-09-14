@@ -181,6 +181,14 @@ namespace tools
       , const std::vector<uint8_t>& extra
       , pending_tx& ptx
       );
+    bool create_pending_transaction_with_per_kb_fee(
+        const std::vector<cryptonote::tx_destination_entry>& dsts
+      , size_t fake_outputs_count
+      , uint64_t unlock_time
+      , uint64_t fee_atomic_xmr_per_kb
+      , const std::vector<uint8_t>& extra
+      , pending_tx& ptx
+      );
     void commit_tx(pending_tx& ptx_vector);
     void commit_tx(std::vector<pending_tx>& ptx_vector);
     std::vector<pending_tx> create_transactions(std::vector<cryptonote::tx_destination_entry> dsts, const size_t fake_outs_count, const uint64_t unlock_time, const uint64_t fee, const std::vector<uint8_t> extra);
