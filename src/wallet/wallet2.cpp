@@ -780,7 +780,7 @@ void wallet2::create_pending_transaction(
     , fee
     , extra
     , detail::digit_split_strategy
-    , tx_dust_policy(fee)
+    , tx_dust_policy(config::DEFAULT_DUST_THRESHOLD)
     , ptx
     );
 }
@@ -812,7 +812,7 @@ bool wallet2::create_pending_transaction_with_per_kb_fee(
       , fee
       , extra
       , detail::digit_split_strategy
-      , tx_dust_policy(fee)
+      , tx_dust_policy(config::DEFAULT_DUST_THRESHOLD)
       , ptx
       );
 
@@ -923,11 +923,11 @@ void wallet2::commit_tx(std::vector<pending_tx>& ptx_vector)
 // Creates a vector of pending transactions.  Splits transactions that are too
 // large into multiple transactions.
 std::vector<wallet2::pending_tx> wallet2::create_transactions(
-    std::vector<cryptonote::tx_destination_entry> dsts
-  , const size_t fake_outs_count
-  , const uint64_t unlock_time
-  , const uint64_t fee
-  , const std::vector<uint8_t> extra
+    std::vector<cryptonote::tx_destination_entry> const & dsts
+  , size_t fake_outs_count
+  , uint64_t unlock_time
+  , uint64_t fee_atomic_xmr_per_kb
+  , std::vector<uint8_t> const & extra
   )
 {
   // failsafe split attempt counter
@@ -953,10 +953,23 @@ std::vector<wallet2::pending_tx> wallet2::create_transactions(
       for (auto & dst_vector : split_values)
       {
         pending_tx ptx;
-        create_pending_transaction(dst_vector, fake_outs_count, unlock_time, fee, extra, ptx);
+        if (!create_pending_transaction_with_per_kb_fee(
+            dst_vector
+          , fake_outs_count
+          , unlock_time
+          , fee_atomic_xmr_per_kb
+          , extra
+          , ptx
+          ))
+        {
+          throw std::runtime_error {
+              "Per-kilobyte fee calculation did not converge"
+            };
+        }
         ptx_vector.push_back(ptx);
 
-        // mark transfers to be used as "spent"
+        // mark transfers to be used as "spent" so that the next transaction
+        // doesn't use them
         for (transfer_container::iterator it : ptx.selected_transfers)
         {
           it->m_spent = true;

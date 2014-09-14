@@ -70,7 +70,11 @@ namespace tools
     bool add_to_fee;
     cryptonote::account_public_address addr_for_dust;
 
-    tx_dust_policy(uint64_t a_dust_threshold = 0, bool an_add_to_fee = true, cryptonote::account_public_address an_addr_for_dust = cryptonote::account_public_address())
+    tx_dust_policy(
+        uint64_t a_dust_threshold = 0
+      , bool an_add_to_fee = true
+      , cryptonote::account_public_address an_addr_for_dust = cryptonote::account_public_address()
+      )
       : dust_threshold(a_dust_threshold)
       , add_to_fee(an_add_to_fee)
       , addr_for_dust(an_addr_for_dust)
@@ -191,7 +195,13 @@ namespace tools
       );
     void commit_tx(pending_tx& ptx_vector);
     void commit_tx(std::vector<pending_tx>& ptx_vector);
-    std::vector<pending_tx> create_transactions(std::vector<cryptonote::tx_destination_entry> dsts, const size_t fake_outs_count, const uint64_t unlock_time, const uint64_t fee, const std::vector<uint8_t> extra);
+    std::vector<pending_tx> create_transactions(
+        std::vector<cryptonote::tx_destination_entry> const & dsts
+      , size_t fake_outs_count
+      , uint64_t unlock_time
+      , uint64_t fee
+      , std::vector<uint8_t> const & extra
+      );
     bool check_connection();
     void get_transfers(wallet2::transfer_container& incoming_transfers) const;
     void get_payments(const crypto::hash& payment_id, std::list<wallet2::payment_details>& payments, uint64_t min_height = 0) const;
